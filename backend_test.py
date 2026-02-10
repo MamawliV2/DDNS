@@ -77,21 +77,21 @@ class DDNSAPITester:
         """Test health endpoint"""
         return self.run_test("Health Check", "GET", "api/health", 200, auth=False)
 
-    def test_register(self, email, password):
+    def test_register(self, email, password, expected_status=200):
         """Test user registration"""
         success, response = self.run_test(
             "User Registration",
             "POST",
             "api/auth/register",
-            200,
+            expected_status,
             data={"email": email, "password": password},
             auth=False
         )
-        if success and 'token' in response:
+        if success and expected_status == 200 and 'token' in response:
             self.token = response['token']
             print(f"    Registered user: {email}")
             return True, response
-        return False, response
+        return success, response
 
     def test_login(self, email, password):
         """Test user login"""
