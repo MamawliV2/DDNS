@@ -173,13 +173,6 @@ export default function Navbar() {
             ))}
             {user ? (
               <>
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                >
-                  {t('nav.dashboard')}
-                </Link>
                 <button
                   onClick={() => { logout(); setMobileOpen(false); }}
                   data-testid="mobile-logout"
