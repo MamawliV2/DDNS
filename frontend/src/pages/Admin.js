@@ -219,10 +219,14 @@ export default function Admin() {
                     <div key={u.id} data-testid={`admin-user-card-${u.id}`} className="rounded-lg border border-border/60 p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-mono truncate max-w-[200px]">{u.email}</span>
-                        {u.role !== 'admin' && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openUserRecords(u)} data-testid={`view-records-mobile-${u.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {u.role !== 'admin' && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`admin-actions-mobile-${u.id}`}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`admin-actions-mobile-${u.id}`}>
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -241,7 +245,8 @@ export default function Admin() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        )}
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant={u.plan === 'premium' ? 'default' : 'secondary'} className="text-[10px]">
