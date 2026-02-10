@@ -128,6 +128,37 @@ export default function Admin() {
     }
   };
 
+  const openUserRecords = async (user) => {
+    setRecordsUser(user);
+    setRecordsOpen(true);
+    setRecordsLoading(true);
+    try {
+      const res = await axios.get(`${API}/admin/users/${user.id}/records`, { headers: getHeaders() });
+      setUserRecords(res.data.records || []);
+    } catch (err) {
+      toast.error('Failed to load user records');
+    } finally {
+      setRecordsLoading(false);
+    }
+  };
+
+  const handleDeleteRecord = async () => {
+    if (!deleteRecordItem) return;
+    setDeleteRecordLoading(true);
+    try {
+      await axios.delete(`${API}/admin/records/${deleteRecordItem.id}`, { headers: getHeaders() });
+      toast.success('Record deleted');
+      setDeleteRecordOpen(false);
+      setDeleteRecordItem(null);
+      setUserRecords(prev => prev.filter(r => r.id !== deleteRecordItem.id));
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete record');
+    } finally {
+      setDeleteRecordLoading(false);
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
