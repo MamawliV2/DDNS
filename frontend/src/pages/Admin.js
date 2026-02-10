@@ -310,7 +310,8 @@ export default function Admin() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
