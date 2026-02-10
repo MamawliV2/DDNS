@@ -260,7 +260,43 @@ export default function Dashboard() {
                 <p className="text-sm">{t('dashboard.no_records')}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                {/* Mobile Card View */}
+                <div className="block sm:hidden p-4 space-y-3">
+                  {records.map((record) => (
+                    <div
+                      key={record.id}
+                      data-testid={`record-card-${record.id}`}
+                      className="rounded-lg border border-border/60 p-4 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
+                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.ddns.land</span></span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(record)} data-testid={`edit-record-mobile-${record.id}`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => openDelete(record)} data-testid={`delete-record-mobile-${record.id}`}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all" dir="ltr">
+                        {record.content}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>TTL: {record.ttl === 1 ? 'Auto' : record.ttl}</span>
+                        <Badge variant={record.proxied ? 'default' : 'outline'} className="text-[10px]">
+                          {record.proxied ? 'Proxied' : 'DNS Only'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
