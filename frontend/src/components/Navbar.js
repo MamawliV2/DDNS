@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
-import { Sun, Moon, Globe, Menu, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { Sun, Moon, Globe, Menu, LogOut, LayoutDashboard, User, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -28,6 +28,9 @@ export default function Navbar() {
 
   if (user) {
     navLinks.push({ path: '/dashboard', label: t('nav.dashboard') });
+    if (user.role === 'admin') {
+      navLinks.push({ path: '/admin', label: t('nav.admin') });
+    }
   }
 
   return (
@@ -110,6 +113,14 @@ export default function Navbar() {
                         {t('nav.dashboard')}
                       </Link>
                     </DropdownMenuItem>
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center gap-2" data-testid="menu-admin">
+                          <Shield className="h-4 w-4" />
+                          {t('nav.admin')}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={logout}
                       data-testid="menu-logout"
