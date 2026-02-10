@@ -149,6 +149,10 @@ class DNSRecordUpdate(BaseModel):
 # --- Auth Routes ---
 @api_router.post("/auth/register")
 async def register(data: UserRegister):
+    # Only allow Gmail addresses
+    if not data.email.lower().endswith("@gmail.com"):
+        raise HTTPException(status_code=400, detail="Only Gmail addresses (@gmail.com) are allowed for registration")
+
     existing = await db.users.find_one({"email": data.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
