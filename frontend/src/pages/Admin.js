@@ -172,7 +172,52 @@ export default function Admin() {
                 <p className="text-sm">{t('admin.no_users')}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                {/* Mobile Card View */}
+                <div className="block sm:hidden p-4 space-y-3">
+                  {users.map((u) => (
+                    <div key={u.id} data-testid={`admin-user-card-${u.id}`} className="rounded-lg border border-border/60 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-mono truncate max-w-[200px]">{u.email}</span>
+                        {u.role !== 'admin' && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`admin-actions-mobile-${u.id}`}>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {u.plan === 'free' ? (
+                                <DropdownMenuItem onClick={() => handleChangePlan(u.id, 'premium')}>
+                                  <Crown className="h-4 w-4 me-2" />{t('admin.set_premium')}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem onClick={() => handleChangePlan(u.id, 'free')}>
+                                  <UserX className="h-4 w-4 me-2" />{t('admin.set_free')}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => { setDeleteUser(u); setDeleteOpen(true); }} className="text-destructive">
+                                <Trash2 className="h-4 w-4 me-2" />{t('admin.delete_user')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={u.plan === 'premium' ? 'default' : 'secondary'} className="text-[10px]">
+                          {u.plan === 'premium' ? 'Premium' : 'Free'}
+                        </Badge>
+                        <Badge variant={u.role === 'admin' ? 'destructive' : 'outline'} className="text-[10px]">
+                          {u.role === 'admin' ? 'Admin' : 'User'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{u.record_count || 0} {t('admin.records')}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{formatDate(u.created_at)}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
