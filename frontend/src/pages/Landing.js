@@ -204,9 +204,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="text-center sm:text-start">
               <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
-                <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground text-[10px] font-bold">D</span>
-                </div>
+                <img src="/logo.svg" alt="" className="w-6 h-6 rounded" />
                 <span className="font-bold" style={{ fontFamily: "'Syne', system-ui" }}>
                   DDNS<span className="text-primary">.LAND</span>
                 </span>
