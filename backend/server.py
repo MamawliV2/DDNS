@@ -185,12 +185,16 @@ async def login(data: UserLogin):
         "token": token,
         "user": {"id": user["id"], "email": user["email"], "plan": user.get("plan", "free"), "role": user.get("role", "user")}
     }
+
+
+@api_router.get("/auth/me")
 async def get_me(user=Depends(get_current_user)):
     record_count = await db.dns_records.count_documents({"user_id": user["id"]})
     return {
         "id": user["id"],
         "email": user["email"],
         "plan": user.get("plan", "free"),
+        "role": user.get("role", "user"),
         "record_count": record_count,
         "record_limit": FREE_RECORD_LIMIT if user.get("plan") == "free" else -1
     }
