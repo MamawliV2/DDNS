@@ -29,6 +29,10 @@ export default function Register() {
       toast.error('Password must be at least 6 characters');
       return;
     }
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      toast.error(t('admin.gmail_only'));
+      return;
+    }
     setLoading(true);
     try {
       await register(email, password);
