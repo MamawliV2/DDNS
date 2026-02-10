@@ -41,6 +41,8 @@
 ### Automated Installation
 
 ```bash
+git clone https://github.com/MamawliV2/DDNS.git
+cd DDNS
 chmod +x install.sh
 ./install.sh
 ```
@@ -71,8 +73,8 @@ The install script will:
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/ddns-land.git
-cd ddns-land
+git clone https://github.com/MamawliV2/DDNS.git
+cd DDNS
 ```
 
 #### 2. Backend Setup
