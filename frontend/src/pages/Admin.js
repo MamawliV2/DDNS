@@ -32,7 +32,7 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import {
-  Users, Database, Crown, Loader2, Trash2, MoreVertical, Shield, Star, UserX,
+  Users, Database, Crown, Loader2, Trash2, MoreVertical, Shield, Star, UserX, Eye, Globe, X,
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -65,6 +65,15 @@ export default function Admin() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteUser, setDeleteUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Records viewer
+  const [recordsOpen, setRecordsOpen] = useState(false);
+  const [recordsUser, setRecordsUser] = useState(null);
+  const [userRecords, setUserRecords] = useState([]);
+  const [recordsLoading, setRecordsLoading] = useState(false);
+  const [deleteRecordOpen, setDeleteRecordOpen] = useState(false);
+  const [deleteRecordItem, setDeleteRecordItem] = useState(null);
+  const [deleteRecordLoading, setDeleteRecordLoading] = useState(false);
 
   const getHeaders = useCallback(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
