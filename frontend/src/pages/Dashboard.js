@@ -57,7 +57,7 @@ function StatsCard({ icon: Icon, title, value, subtitle, accentColor }) {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground mb-1">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <div className="text-2xl font-bold">{value}</div>
             {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
           </div>
           <div className={`w-10 h-10 rounded-md flex items-center justify-center ${accentColor || 'bg-primary/10'}`}>
