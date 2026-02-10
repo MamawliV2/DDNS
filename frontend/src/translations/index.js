@@ -132,6 +132,10 @@ export const translations = {
       setup_desc: "Promote user to admin role",
       no_users: "No users found",
       gmail_only: "Only Gmail addresses (@gmail.com) are allowed",
+      view_records: "User DNS Records",
+      no_records: "This user has no DNS records",
+      delete_record: "Delete Record",
+      delete_record_confirm: "Are you sure you want to delete this DNS record from Cloudflare?",
     },
   },
   fa: {
@@ -267,6 +271,10 @@ export const translations = {
       setup_desc: "ارتقای کاربر به نقش ادمین",
       no_users: "کاربری یافت نشد",
       gmail_only: "فقط آدرس\u200Cهای جیمیل (@gmail.com) مجاز هستند",
+      view_records: "رکوردهای DNS کاربر",
+      no_records: "این کاربر هیچ رکورد DNS ندارد",
+      delete_record: "حذف رکورد",
+      delete_record_confirm: "آیا مطمئنید که می\u200Cخواهید این رکورد DNS را از Cloudflare حذف کنید؟",
     },
   },
 };
