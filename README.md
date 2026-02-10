@@ -46,13 +46,18 @@ chmod +x install.sh
 ```
 
 The install script will:
-1. Check and install all prerequisites (Python 3, Node.js, MongoDB)
-2. Ask for your Cloudflare API Token and Zone ID
-3. Ask for admin email and password
-4. Install all dependencies
-5. Configure environment variables
-6. Start the application
-7. Create and promote the admin account
+1. Check and install all prerequisites (Python 3, Node.js, MongoDB, nginx, certbot)
+2. Ask if you want to use a custom domain (+ SSL with Let's Encrypt)
+3. Ask for your Cloudflare API Token and Zone ID
+4. Ask for admin email and password
+5. Install all dependencies
+6. Configure environment variables
+7. Build the frontend for production
+8. Setup systemd service for backend
+9. Configure nginx as reverse proxy (if using domain)
+10. Obtain SSL certificate with certbot (if using domain)
+11. Create and promote the admin account
+12. Display access URLs including admin panel link
 
 ### Manual Installation
 
