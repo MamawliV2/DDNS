@@ -149,6 +149,10 @@ class DNSRecordUpdate(BaseModel):
 # --- Auth Routes ---
 @api_router.post("/auth/register")
 async def register(data: UserRegister):
+    # Validate email format
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', data.email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
     # Only allow Gmail addresses
     if not data.email.lower().endswith("@gmail.com"):
         raise HTTPException(status_code=400, detail="Only Gmail addresses (@gmail.com) are allowed for registration")
