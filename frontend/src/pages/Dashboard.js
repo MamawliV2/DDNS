@@ -92,25 +92,25 @@ export default function Dashboard() {
   const [deleteRecord, setDeleteRecord] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const headers = { Authorization: `Bearer ${token}` };
+  const getHeaders = useCallback(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
   const fetchRecords = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/dns/records`, { headers });
+      const res = await axios.get(`${API}/dns/records`, { headers: getHeaders() });
       setRecords(res.data.records || []);
     } catch {
       toast.error('Failed to load records');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [getHeaders]);
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/auth/me`, { headers });
+      const res = await axios.get(`${API}/auth/me`, { headers: getHeaders() });
       setUserStats(res.data);
     } catch { /* ignore */ }
-  }, [token]);
+  }, [getHeaders]);
 
   useEffect(() => {
     fetchRecords();
