@@ -121,7 +121,7 @@ export default function Dashboard() {
     e.preventDefault();
     setCreateLoading(true);
     try {
-      await axios.post(`${API}/dns/records`, createForm, { headers });
+      await axios.post(`${API}/dns/records`, createForm, { headers: getHeaders() });
       toast.success('Record created successfully!');
       setCreateOpen(false);
       setCreateForm({ record_type: 'A', name: '', content: '', ttl: 1, proxied: false });
@@ -138,7 +138,7 @@ export default function Dashboard() {
     e.preventDefault();
     setEditLoading(true);
     try {
-      await axios.put(`${API}/dns/records/${editRecord.id}`, editForm, { headers });
+      await axios.put(`${API}/dns/records/${editRecord.id}`, editForm, { headers: getHeaders() });
       toast.success('Record updated successfully!');
       setEditOpen(false);
       fetchRecords();
@@ -152,7 +152,7 @@ export default function Dashboard() {
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      await axios.delete(`${API}/dns/records/${deleteRecord.id}`, { headers });
+      await axios.delete(`${API}/dns/records/${deleteRecord.id}`, { headers: getHeaders() });
       toast.success('Record deleted successfully!');
       setDeleteOpen(false);
       fetchRecords();
