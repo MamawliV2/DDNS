@@ -170,7 +170,7 @@ async def register(data: UserRegister):
     token = create_token(user_id, data.email)
     return {
         "token": token,
-        "user": {"id": user_id, "email": data.email, "plan": "free"}
+        "user": {"id": user_id, "email": data.email, "plan": "free", "role": "user"}
     }
 
 
