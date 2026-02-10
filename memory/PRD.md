@@ -35,6 +35,9 @@ Build a beautiful website for ddns.land domain where users can create accounts a
 - Persian/English language switcher with RTL support
 - Telegram contact integration for premium upgrades
 - Free plan limit enforcement (2 records)
+- **[Feb 2026] Gmail-only registration** - Only @gmail.com emails allowed
+- **[Feb 2026] Admin panel** - User management, plan changes, user deletion
+- **[Feb 2026] Emergent branding removed** - All watermarks, scripts, analytics cleaned
 
 ## Prioritized Backlog
 ### P0 (Done)
