@@ -1,4 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#2563eb"/>
-  <text x="16" y="22" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="18" fill="white">D</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#fg)"/>
+  <ellipse cx="32" cy="32" rx="22" ry="8" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(-30 32 32)"/>
+  <ellipse cx="32" cy="32" rx="22" ry="8" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(30 32 32)"/>
+  <text x="32" y="40" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="32" fill="white">D</text>
+  <circle cx="42" cy="20" r="3" fill="white" opacity="0.8"/>
+  <circle cx="42" cy="20" r="1.5" fill="#3b82f6"/>
 </svg>
