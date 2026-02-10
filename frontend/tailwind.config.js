@@ -7,6 +7,12 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			heading: ['"Syne"', 'system-ui', 'sans-serif'],
+  			body: ['"Be Vietnam Pro"', 'system-ui', 'sans-serif'],
+  			mono: ['"JetBrains Mono"', 'monospace'],
+  			persian: ['"Vazirmatn"', '"Be Vietnam Pro"', 'system-ui', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
