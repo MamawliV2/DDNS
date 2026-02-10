@@ -312,12 +312,19 @@ def test_new_features():
     return tester
 
 def main():
-    print("🚀 Starting DDNS.LAND API Testing")
-    print("=" * 50)
+    print("🚀 Starting DDNS.LAND API Testing - NEW FEATURES FOCUS")
+    print("=" * 60)
+    
+    # Test the new features first
+    feature_tester = test_new_features()
+    
+    # Run comprehensive API tests
+    print("\n🔍 Running Comprehensive API Tests")
+    print("=" * 40)
     
     tester = DDNSAPITester()
     timestamp = int(time.time())
-    test_email = f"test_user_{timestamp}@example.com"
+    test_email = f"test_user_{timestamp}@gmail.com"  # Use Gmail for registration
     test_password = "TestPass123!"
 
     # Test basic health
@@ -365,22 +372,29 @@ def main():
     # Clean up test records
     tester.cleanup_records()
 
+    # Combine results from both testers
+    total_tests = tester.tests_run + feature_tester.tests_run
+    total_passed = tester.tests_passed + feature_tester.tests_passed
+
     # Print final results
-    print("\n" + "=" * 50)
-    print(f"📊 Test Summary:")
-    print(f"   Total Tests: {tester.tests_run}")
-    print(f"   Passed: {tester.tests_passed}")
-    print(f"   Failed: {tester.tests_run - tester.tests_passed}")
-    print(f"   Success Rate: {(tester.tests_passed/tester.tests_run*100):.1f}%")
+    print("\n" + "=" * 60)
+    print(f"📊 Complete Test Summary:")
+    print(f"   Total Tests: {total_tests}")
+    print(f"   Passed: {total_passed}")
+    print(f"   Failed: {total_tests - total_passed}")
+    print(f"   Success Rate: {(total_passed/total_tests*100):.1f}%")
     
-    # Log failed tests
-    failed_tests = [t for t in tester.test_results if not t['success']]
-    if failed_tests:
+    # Log failed tests from both testers
+    all_failed_tests = []
+    all_failed_tests.extend([t for t in tester.test_results if not t['success']])
+    all_failed_tests.extend([t for t in feature_tester.test_results if not t['success']])
+    
+    if all_failed_tests:
         print(f"\n❌ Failed Tests:")
-        for test in failed_tests:
+        for test in all_failed_tests:
             print(f"   - {test['test']}: {test['error']}")
     
-    return 0 if tester.tests_passed == tester.tests_run else 1
+    return 0 if total_passed == total_tests else 1
 
 if __name__ == "__main__":
     sys.exit(main())
