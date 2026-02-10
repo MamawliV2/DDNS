@@ -27,3 +27,7 @@ Thumbs.db
 # Test reports
 test_reports/
 .screenshots/
+-e 
+# Environment files
+*.env
+*.env.*
