@@ -396,6 +396,97 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View User Records Dialog */}
+      <Dialog open={recordsOpen} onOpenChange={setRecordsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col" data-testid="view-records-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {t('admin.view_records')}
+            </DialogTitle>
+            {recordsUser && (
+              <p className="text-sm text-muted-foreground font-mono">{recordsUser.email}</p>
+            )}
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1">
+            {recordsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : userRecords.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Database className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">{t('admin.no_records')}</p>
+              </div>
+            ) : (
+              <div className="space-y-3 p-1">
+                {userRecords.map((record) => (
+                  <div
+                    key={record.id}
+                    data-testid={`admin-record-${record.id}`}
+                    className="rounded-lg border border-border/60 p-4"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
+                        <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.ddns.land</span></span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => { setDeleteRecordItem(record); setDeleteRecordOpen(true); }}
+                        data-testid={`admin-delete-record-${record.id}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all" dir="ltr">
+                      {record.content}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span>TTL: {record.ttl === 1 ? 'Auto' : record.ttl}</span>
+                      <Badge variant={record.proxied ? 'default' : 'outline'} className="text-[10px]">
+                        {record.proxied ? 'Proxied' : 'DNS Only'}
+                      </Badge>
+                      {record.created_at && <span>{formatDate(record.created_at)}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Record Confirmation */}
+      <AlertDialog open={deleteRecordOpen} onOpenChange={setDeleteRecordOpen}>
+        <AlertDialogContent data-testid="admin-delete-record-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('admin.delete_record')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('admin.delete_record_confirm')}
+              {deleteRecordItem && (
+                <span className="block mt-2 font-mono text-xs">
+                  {deleteRecordItem.name}.ddns.land ({deleteRecordItem.record_type}) → {deleteRecordItem.content}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('dashboard.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRecord}
+              disabled={deleteRecordLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="admin-confirm-delete-record-btn"
+            >
+              {deleteRecordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('dashboard.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
