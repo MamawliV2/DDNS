@@ -200,7 +200,7 @@ async def get_me(user=Depends(get_current_user)):
         "plan": user.get("plan", "free"),
         "role": user.get("role", "user"),
         "record_count": record_count,
-        "record_limit": FREE_RECORD_LIMIT if user.get("plan") == "free" else -1
+        "record_limit": -1 if user.get("role") == "admin" or user.get("plan") != "free" else FREE_RECORD_LIMIT
     }
 
 
