@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -123,12 +123,12 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
 
 # --- Pydantic Models ---
 class UserRegister(BaseModel):
-    email: EmailStr
+    email: str
     password: str = Field(min_length=6)
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 
