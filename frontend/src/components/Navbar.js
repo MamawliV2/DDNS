@@ -44,13 +44,12 @@ export default function Navbar() {
           <Link
             to="/"
             data-testid="navbar-logo"
-            className="flex items-center gap-2 text-xl font-bold tracking-tight"
+            className="flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight"
             style={{ fontFamily: "'Syne', system-ui, sans-serif" }}
           >
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-sm font-bold">D</span>
-            </div>
-            <span>DDNS<span className="text-primary">.LAND</span></span>
+            <img src="/logo.svg" alt="DDNS.LAND" className="w-7 h-7 sm:w-8 sm:h-8 rounded-md" />
+            <span className="hidden xs:inline">DDNS<span className="text-primary">.LAND</span></span>
+            <span className="xs:hidden">DDNS<span className="text-primary">.L</span></span>
           </Link>
 
           {/* Desktop Nav */}
