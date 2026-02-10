@@ -408,6 +408,25 @@ async def admin_stats(admin=Depends(get_admin_user)):
     }
 
 
+@api_router.get("/admin/users/{user_id}/records")
+async def admin_get_user_records(user_id: str, admin=Depends(get_admin_user)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    records = await db.dns_records.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    return {"user": user, "records": records}
+
+
+@api_router.delete("/admin/records/{record_id}")
+async def admin_delete_record(record_id: str, admin=Depends(get_admin_user)):
+    record = await db.dns_records.find_one({"id": record_id}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    await cf_delete_record(record["cf_id"])
+    await db.dns_records.delete_one({"id": record_id})
+    return {"message": "Record deleted successfully"}
+
+
 @api_router.post("/admin/setup")
 async def admin_setup():
     """One-time admin setup: promotes the ADMIN_EMAIL user to admin role."""
