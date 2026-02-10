@@ -183,11 +183,8 @@ async def login(data: UserLogin):
     token = create_token(user["id"], user["email"])
     return {
         "token": token,
-        "user": {"id": user["id"], "email": user["email"], "plan": user.get("plan", "free")}
+        "user": {"id": user["id"], "email": user["email"], "plan": user.get("plan", "free"), "role": user.get("role", "user")}
     }
-
-
-@api_router.get("/auth/me")
 async def get_me(user=Depends(get_current_user)):
     record_count = await db.dns_records.count_documents({"user_id": user["id"]})
     return {
@@ -324,6 +321,96 @@ async def delete_record(record_id: str, user=Depends(get_current_user)):
     await db.dns_records.delete_one({"id": record_id})
 
     return {"message": "Record deleted successfully"}
+
+
+# --- Admin Helpers ---
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+
+
+async def get_admin_user(authorization: Optional[str] = Header(None)):
+    user = await get_current_user(authorization)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
+# --- Admin Routes ---
+class UpdateUserPlan(BaseModel):
+    plan: str  # "free" or "premium"
+
+
+@api_router.get("/admin/users")
+async def admin_list_users(admin=Depends(get_admin_user)):
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(500)
+    for u in users:
+        u["record_count"] = await db.dns_records.count_documents({"user_id": u["id"]})
+    return {"users": users}
+
+
+@api_router.put("/admin/users/{user_id}/plan")
+async def admin_update_plan(user_id: str, data: UpdateUserPlan, admin=Depends(get_admin_user)):
+    if data.plan not in ["free", "premium"]:
+        raise HTTPException(status_code=400, detail="Plan must be 'free' or 'premium'")
+
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"plan": data.plan, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": f"User plan updated to {data.plan}"}
+
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin=Depends(get_admin_user)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.get("role") == "admin":
+        raise HTTPException(status_code=400, detail="Cannot delete admin user")
+
+    # Delete user's DNS records from Cloudflare
+    user_records = await db.dns_records.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    for rec in user_records:
+        try:
+            await cf_delete_record(rec["cf_id"])
+        except Exception:
+            logger.warning(f"Failed to delete CF record {rec['cf_id']} for user {user_id}")
+
+    await db.dns_records.delete_many({"user_id": user_id})
+    await db.users.delete_one({"id": user_id})
+
+    return {"message": "User and all their records deleted"}
+
+
+@api_router.get("/admin/stats")
+async def admin_stats(admin=Depends(get_admin_user)):
+    total_users = await db.users.count_documents({})
+    total_records = await db.dns_records.count_documents({})
+    free_users = await db.users.count_documents({"plan": "free"})
+    premium_users = await db.users.count_documents({"plan": "premium"})
+    return {
+        "total_users": total_users,
+        "total_records": total_records,
+        "free_users": free_users,
+        "premium_users": premium_users,
+    }
+
+
+@api_router.post("/admin/setup")
+async def admin_setup():
+    """One-time admin setup: promotes the ADMIN_EMAIL user to admin role."""
+    admin_user = await db.users.find_one({"email": ADMIN_EMAIL})
+    if not admin_user:
+        raise HTTPException(status_code=404, detail=f"User with email {ADMIN_EMAIL} not found. Register first.")
+
+    await db.users.update_one(
+        {"email": ADMIN_EMAIL},
+        {"$set": {"role": "admin"}}
+    )
+    return {"message": f"User {ADMIN_EMAIL} is now admin"}
 
 
 @api_router.get("/health")
