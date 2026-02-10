@@ -223,7 +223,8 @@ async def create_record(data: DNSRecordCreate, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Subdomain name too long (max 63 characters)")
 
     record_count = await db.dns_records.count_documents({"user_id": user["id"]})
-    if user.get("plan", "free") == "free" and record_count >= FREE_RECORD_LIMIT:
+    is_admin = user.get("role") == "admin"
+    if not is_admin and user.get("plan", "free") == "free" and record_count >= FREE_RECORD_LIMIT:
         raise HTTPException(status_code=403, detail="Free plan limit reached. Upgrade to create more records.")
 
     full_name = f"{data.name}.{DOMAIN}"
