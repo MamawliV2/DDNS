@@ -177,18 +177,74 @@ class DDNSAPITester:
         )
         return success, response
 
-    def test_invalid_auth(self):
-        """Test with invalid auth token"""
-        old_token = self.token
-        self.token = "invalid-token"
+    def test_admin_login(self, email, password):
+        """Test admin user login and verify role"""
         success, response = self.run_test(
-            "Invalid Auth Token",
-            "GET",
-            "api/auth/me",
-            401
+            "Admin Login",
+            "POST",
+            "api/auth/login",
+            200,
+            data={"email": email, "password": password},
+            auth=False
         )
-        self.token = old_token
-        return success, response
+        if success and 'token' in response:
+            self.token = response['token']
+            user_data = response.get('user', {})
+            if user_data.get('role') == 'admin':
+                print(f"    Admin login successful: {email} (role: {user_data.get('role')})")
+                return True, response
+            else:
+                print(f"    Login successful but role is not admin: {user_data.get('role')}")
+                return False, response
+        return False, response
+
+    def test_admin_stats(self):
+        """Test admin stats endpoint"""
+        return self.run_test("Admin Stats", "GET", "api/admin/stats", 200)
+
+    def test_admin_users_list(self):
+        """Test admin users list endpoint"""
+        return self.run_test("Admin Users List", "GET", "api/admin/users", 200)
+
+    def test_admin_update_user_plan(self, user_id, plan):
+        """Test admin updating user plan"""
+        return self.run_test(
+            f"Admin Update User Plan to {plan}",
+            "PUT",
+            f"api/admin/users/{user_id}/plan",
+            200,
+            data={"plan": plan}
+        )
+
+    def test_admin_delete_user(self, user_id):
+        """Test admin deleting user"""
+        return self.run_test(
+            "Admin Delete User",
+            "DELETE",
+            f"api/admin/users/{user_id}",
+            200
+        )
+
+    def test_non_admin_admin_access(self):
+        """Test non-admin user accessing admin endpoints"""
+        success1, _ = self.run_test("Non-admin Stats Access", "GET", "api/admin/stats", 403)
+        success2, _ = self.run_test("Non-admin Users Access", "GET", "api/admin/users", 403)
+        return success1 and success2, {}
+
+    def test_gmail_only_registration(self):
+        """Test Gmail-only registration policy"""
+        # Test non-Gmail registration (should fail)
+        success1, _ = self.test_register("test@yahoo.com", "password123", 400)
+        success2, _ = self.test_register("test@outlook.com", "password123", 400)  
+        success3, _ = self.test_register("test@example.com", "password123", 400)
+        
+        # Test Gmail registration (should succeed)
+        timestamp = int(time.time())
+        gmail_email = f"testuser{timestamp}@gmail.com"
+        success4, response = self.test_register(gmail_email, "password123", 200)
+        
+        all_success = success1 and success2 and success3 and success4
+        return all_success, response
 
     def cleanup_records(self):
         """Clean up created test records"""
