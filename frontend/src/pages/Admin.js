@@ -307,7 +307,16 @@ export default function Admin() {
                           {formatDate(u.created_at)}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-end">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openUserRecords(u)}
+                              data-testid={`view-records-${u.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             {u.role !== 'admin' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
