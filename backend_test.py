@@ -246,6 +246,19 @@ class DDNSAPITester:
         all_success = success1 and success2 and success3 and success4
         return all_success, response
 
+    def test_invalid_auth(self):
+        """Test with invalid auth token"""
+        old_token = self.token
+        self.token = "invalid-token"
+        success, response = self.run_test(
+            "Invalid Auth Token",
+            "GET",
+            "api/auth/me",
+            401
+        )
+        self.token = old_token
+        return success, response
+
     def cleanup_records(self):
         """Clean up created test records"""
         if self.created_records:
@@ -256,6 +269,47 @@ class DDNSAPITester:
                     print(f"    Deleted record: {record_id}")
                 else:
                     print(f"    Failed to delete record: {record_id}")
+
+def test_new_features():
+    """Test the three new features"""
+    print("\n🎯 Testing New Features")
+    print("=" * 30)
+    
+    tester = DDNSAPITester()
+    
+    # 1. Test Gmail-only registration
+    print("\n📧 Testing Gmail-only Registration Policy...")
+    success, _ = tester.test_gmail_only_registration()
+    if success:
+        print("✅ Gmail-only registration policy working correctly")
+    else:
+        print("❌ Gmail-only registration policy has issues")
+
+    # 2. Test Admin Login and Role
+    print("\n👑 Testing Admin Authentication...")
+    admin_success, admin_response = tester.test_admin_login("admin@gmail.com", "admin123456")
+    if not admin_success:
+        print("❌ Admin login failed, skipping admin tests")
+        return tester
+
+    # 3. Test Admin Panel Endpoints
+    print("\n🛠️ Testing Admin Panel Endpoints...")
+    tester.test_admin_stats()
+    tester.test_admin_users_list()
+
+    # Test non-admin access restriction
+    print("\n🔒 Testing Non-Admin Access Restrictions...")
+    # First login as regular user
+    timestamp = int(time.time())
+    regular_email = f"regular{timestamp}@gmail.com"
+    reg_success, _ = tester.test_register(regular_email, "password123")
+    if reg_success:
+        tester.test_non_admin_admin_access()
+    
+    # Switch back to admin
+    tester.test_admin_login("admin@gmail.com", "admin123456")
+    
+    return tester
 
 def main():
     print("🚀 Starting DDNS.LAND API Testing")
