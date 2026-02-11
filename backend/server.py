@@ -40,7 +40,7 @@ JWT_EXPIRY_DAYS = 7
 DOMAIN = "dnslab.biz"
 FREE_RECORD_LIMIT = 2
 
-app = FastAPI(title="DDNS.LAND API")
+app = FastAPI(title="DNSLAB.BIZ API")
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -443,7 +443,7 @@ async def admin_setup():
 
 @api_router.get("/health")
 async def health():
-    return {"status": "healthy", "service": "DDNS.LAND API"}
+    return {"status": "healthy", "service": "DNSLAB.BIZ API"}
 
 
 app.include_router(api_router)
