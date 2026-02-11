@@ -11,7 +11,7 @@ export const translations = {
     },
     hero: {
       title: "Free Dynamic DNS",
-      subtitle: "Get your free subdomain on ddns.land. Manage A, AAAA, and CNAME records with our powerful dashboard.",
+      subtitle: "Get your free subdomain on dnslab.biz. Manage A, AAAA, and CNAME records with our powerful dashboard.",
       cta: "Get Started Free",
       learn: "View Pricing",
     },
@@ -150,7 +150,7 @@ export const translations = {
     },
     hero: {
       title: "DNS داینامیک رایگان",
-      subtitle: "ساب\u200Cدامنه رایگان روی ddns.land بگیرید. رکوردهای A، AAAA و CNAME را با داشبورد قدرتمند ما مدیریت کنید.",
+      subtitle: "ساب\u200Cدامنه رایگان روی dnslab.biz بگیرید. رکوردهای A، AAAA و CNAME را با داشبورد قدرتمند ما مدیریت کنید.",
       cta: "شروع رایگان",
       learn: "مشاهده قیمت\u200Cها",
     },

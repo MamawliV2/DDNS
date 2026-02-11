@@ -37,7 +37,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = 7
 
 # App config
-DOMAIN = "ddns.land"
+DOMAIN = "dnslab.biz"
 FREE_RECORD_LIMIT = 2
 
 app = FastAPI(title="DDNS.LAND API")
