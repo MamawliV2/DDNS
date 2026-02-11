@@ -108,7 +108,7 @@ export const translations = {
       contact: "Contact",
       telegram: "Telegram",
       rights: "All rights reserved.",
-      domain: "ddns.land",
+      domain: "dnslab.biz",
     },
     admin: {
       title: "Admin Panel",
@@ -247,7 +247,7 @@ export const translations = {
       contact: "تماس با ما",
       telegram: "تلگرام",
       rights: "تمام حقوق محفوظ است.",
-      domain: "ddns.land",
+      domain: "dnslab.biz",
     },
     admin: {
       title: "پنل مدیریت",
