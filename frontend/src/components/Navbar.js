@@ -47,8 +47,8 @@ export default function Navbar() {
             className="flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight"
             style={{ fontFamily: "'Syne', system-ui, sans-serif" }}
           >
-            <img src="/logo.svg" alt="DDNS.LAND" className="w-7 h-7 sm:w-8 sm:h-8 rounded-md" />
-            <span>DDNS<span className="text-primary">.LAND</span></span>
+            <img src="/logo.svg" alt="DNSLAB.BIZ" className="w-7 h-7 sm:w-8 sm:h-8 rounded-md" />
+            <span>DNS<span className="text-primary">LAB</span></span>
           </Link>
 
           {/* Desktop Nav */}
