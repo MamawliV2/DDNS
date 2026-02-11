@@ -1,9 +1,9 @@
-# DDNS.LAND - Free Dynamic DNS Service
+# DNSLAB.BIZ - Free Dynamic DNS Service
 
 <div align="center">
-  <img src="frontend/public/logo.svg" alt="DDNS.LAND Logo" width="120" />
+  <img src="frontend/public/logo.svg" alt="DNSLAB.BIZ Logo" width="120" />
   <h3>Free Dynamic DNS Management Platform</h3>
-  <p>Create free DNS subdomains on <strong>ddns.land</strong> with real Cloudflare infrastructure</p>
+  <p>Create free DNS subdomains on <strong>dnslab.biz</strong> with real Cloudflare infrastructure</p>
   
   ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
   ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
@@ -135,7 +135,7 @@ curl -X POST http://localhost:8001/api/admin/setup
 2. Click your profile icon → **My Profile**
 3. Navigate to **API Tokens** → **Create Token**
 4. Select **Edit zone DNS** template
-5. Under Zone Resources, select your domain (`ddns.land`)
+5. Under Zone Resources, select your domain (`dnslab.biz`)
 6. Click **Continue to summary** → **Create Token**
 7. Copy the token (shown only once!)
 
@@ -175,7 +175,7 @@ curl -X POST http://localhost:8001/api/admin/setup
 ## Project Structure
 
 ```
-ddns-land/
+dnslab-biz/
 ├── backend/
 │   ├── server.py           # FastAPI application
 │   ├── requirements.txt    # Python dependencies

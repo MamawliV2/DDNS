@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#  DDNS.LAND - Automated Installation Script
+#  DNSLAB.BIZ - Automated Installation Script
 #  Free Dynamic DNS Service powered by Cloudflare
 #  https://github.com/MamawliV2/DDNS
 # ============================================================
@@ -131,7 +131,7 @@ echo -e "  ${DIM}Enter your domain for nginx + SSL setup.${NC}"
 echo -e "  ${DIM}Leave empty to run on localhost only.${NC}"
 echo ""
 
-read -p "  Your domain (e.g., ddns.land) or press Enter to skip: " DOMAIN
+read -p "  Your domain (e.g., dnslab.biz) or press Enter to skip: " DOMAIN
 
 USE_SSL=false
 BACKEND_PORT=8001
@@ -313,7 +313,7 @@ echo -e "  ${BOLD}Creating backend service...${NC}"
 
 sudo tee /etc/systemd/system/ddns-backend.service > /dev/null << SVCEOF
 [Unit]
-Description=DDNS.LAND Backend API
+Description=DNSLAB.BIZ Backend API
 After=network.target mongod.service
 
 [Service]
@@ -378,7 +378,7 @@ if [ "$USE_SSL" = true ]; then
     echo -e "  ${BOLD}Configuring nginx...${NC}"
 
     # Create nginx config
-    sudo tee /etc/nginx/sites-available/ddns-land > /dev/null << NGXEOF
+    sudo tee /etc/nginx/sites-available/dnslab-biz > /dev/null << NGXEOF
 server {
     listen 80;
     server_name ${DOMAIN};
@@ -418,7 +418,7 @@ NGXEOF
 
     # Enable site
     sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null
-    sudo ln -sf /etc/nginx/sites-available/ddns-land /etc/nginx/sites-enabled/
+    sudo ln -sf /etc/nginx/sites-available/dnslab-biz /etc/nginx/sites-enabled/
 
     # Test and restart nginx
     if sudo nginx -t 2>/dev/null; then
@@ -508,7 +508,7 @@ echo ""
 echo -e "${GREEN}${BOLD}"
 echo "  ╔═══════════════════════════════════════════════════════╗"
 echo "  ║                                                       ║"
-echo "  ║     DDNS.LAND Installation Complete!                  ║"
+echo "  ║     DNSLAB.BIZ Installation Complete!                  ║"
 echo "  ║                                                       ║"
 echo "  ╚═══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
