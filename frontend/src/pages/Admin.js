@@ -436,7 +436,7 @@ export default function Admin() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
-                        <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.ddns.land</span></span>
+                        <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.dnslab.biz</span></span>
                       </div>
                       <Button
                         variant="ghost"
@@ -475,7 +475,7 @@ export default function Admin() {
               {t('admin.delete_record_confirm')}
               {deleteRecordItem && (
                 <span className="block mt-2 font-mono text-xs">
-                  {deleteRecordItem.name}.ddns.land ({deleteRecordItem.record_type}) → {deleteRecordItem.content}
+                  {deleteRecordItem.name}.dnslab.biz ({deleteRecordItem.record_type}) → {deleteRecordItem.content}
                 </span>
               )}
             </AlertDialogDescription>

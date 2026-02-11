@@ -272,7 +272,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
-                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.ddns.land</span></span>
+                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.dnslab.biz</span></span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(record)} data-testid={`edit-record-mobile-${record.id}`}>
@@ -318,7 +318,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm">{record.name}</span>
-                          <span className="text-muted-foreground text-xs">.ddns.land</span>
+                          <span className="text-muted-foreground text-xs">.dnslab.biz</span>
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm">{record.content}</span>
@@ -399,7 +399,7 @@ export default function Dashboard() {
                   className="bg-background/50"
                   dir="ltr"
                 />
-                <span className="text-sm text-muted-foreground whitespace-nowrap font-mono">.ddns.land</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap font-mono">.dnslab.biz</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -446,7 +446,7 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground mb-1">{t('dashboard.subdomain')}</p>
                 <p className="font-mono text-sm">
                   <Badge variant="outline" className="me-2 text-[10px]">{editRecord.record_type}</Badge>
-                  {editRecord.name}.ddns.land
+                  {editRecord.name}.dnslab.biz
                 </p>
               </div>
             )}
@@ -491,7 +491,7 @@ export default function Dashboard() {
               {t('dashboard.delete_confirm')}
               {deleteRecord && (
                 <span className="block mt-2 font-mono text-xs">
-                  {deleteRecord.name}.ddns.land ({deleteRecord.record_type})
+                  {deleteRecord.name}.dnslab.biz ({deleteRecord.record_type})
                 </span>
               )}
             </AlertDialogDescription>

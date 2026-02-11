@@ -150,9 +150,9 @@ export default function Landing() {
                 <span className="ms-2 text-[10px] text-muted-foreground font-mono">terminal</span>
               </div>
               <div className={`p-4 font-mono text-xs sm:text-sm space-y-1.5 ${lang === 'fa' ? 'text-left' : ''}`} dir="ltr">
-                <p className="text-muted-foreground">$ dig blog.ddns.land</p>
+                <p className="text-muted-foreground">$ dig blog.dnslab.biz</p>
                 <p><span className="text-green-400">;</span> ANSWER SECTION:</p>
-                <p><span className="text-primary">blog.ddns.land.</span>  300  IN  A  <span className="text-accent">192.168.1.100</span></p>
+                <p><span className="text-primary">blog.dnslab.biz.</span>  300  IN  A  <span className="text-accent">192.168.1.100</span></p>
               </div>
             </div>
           </div>
