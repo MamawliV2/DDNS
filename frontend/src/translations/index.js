@@ -16,7 +16,7 @@ export const translations = {
       learn: "View Pricing",
     },
     features: {
-      title: "Why DDNS.LAND?",
+      title: "Why DNSLAB.BIZ?",
       subtitle: "Everything you need for reliable DNS management",
       speed: { title: "Lightning Fast", desc: "DNS propagation in seconds via Cloudflare's global network." },
       security: { title: "Secure by Default", desc: "Protected by Cloudflare's enterprise-grade security infrastructure." },
@@ -155,7 +155,7 @@ export const translations = {
       learn: "مشاهده قیمت\u200Cها",
     },
     features: {
-      title: "چرا DDNS.LAND؟",
+      title: "چرا DNSLAB.BIZ؟",
       subtitle: "همه چیزی که برای مدیریت قابل اعتماد DNS نیاز دارید",
       speed: { title: "سرعت بالا", desc: "انتشار DNS در چند ثانیه با شبکه جهانی Cloudflare." },
       security: { title: "امنیت پیش\u200Cفرض", desc: "محافظت شده توسط زیرساخت امنیتی سازمانی Cloudflare." },
