@@ -206,7 +206,7 @@ export default function Landing() {
               <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
                 <img src="/logo.svg" alt="" className="w-6 h-6 rounded" />
                 <span className="font-bold" style={{ fontFamily: "'Syne', system-ui" }}>
-                  DDNS<span className="text-primary">.LAND</span>
+                  DNS<span className="text-primary">LAB</span>
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">{t('footer.description')}</p>
