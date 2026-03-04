@@ -75,6 +75,16 @@ async def cf_update_record(record_id: str, record_type: str, name: str, content:
         return data["result"]
 
 
+async def cf_check_record_exists(name: str):
+    url = f"{CF_BASE}/zones/{CF_ZONE_ID}/dns_records?name={name}"
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(url, headers=CF_HEADERS)
+        data = resp.json()
+        if data.get("success") and data.get("result"):
+            return True
+        return False
+
+
 async def cf_delete_record(record_id: str):
     url = f"{CF_BASE}/zones/{CF_ZONE_ID}/dns_records/{record_id}"
     async with httpx.AsyncClient(timeout=30) as client:
@@ -231,6 +241,10 @@ async def create_record(data: DNSRecordCreate, user=Depends(get_current_user)):
     existing = await db.dns_records.find_one({"full_name": full_name})
     if existing:
         raise HTTPException(status_code=400, detail="This subdomain is already taken")
+
+    cf_exists = await cf_check_record_exists(full_name)
+    if cf_exists:
+        raise HTTPException(status_code=400, detail="This subdomain already exists in DNS records")
 
     if data.record_type == "A":
         if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', data.content):
