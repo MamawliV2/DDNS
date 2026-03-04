@@ -6,8 +6,6 @@
 #  https://github.com/MamawliV2/DDNS
 # ============================================================
 
-set -e
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -57,71 +55,428 @@ print_info() {
 
 check_command() {
     if command -v "$1" &> /dev/null; then
-        print_ok "$1 $(command -v $1)"
         return 0
     else
         return 1
     fi
 }
 
-# Get project directory (where this script is located)
+fail_exit() {
+    print_err "$1"
+    echo -e "\n  ${RED}Installation aborted.${NC}\n"
+    exit 1
+}
+
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# ---- Step 1: Check Prerequisites ----
-print_step "1/9 - Checking prerequisites"
+# Prevent interactive prompts during package installation
+export DEBIAN_FRONTEND=noninteractive
+
+# ---- Check root/sudo ----
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        fail_exit "This script requires root privileges. Run with: sudo bash install.sh"
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# ---- Detect OS ----
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+    OS_VERSION=$VERSION_ID
+    OS_CODENAME=$VERSION_CODENAME
+else
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    OS_VERSION=""
+    OS_CODENAME=""
+fi
+print_info "Detected OS: $OS $OS_VERSION ($OS_CODENAME)"
+
+# ---- Supported OS check ----
+case "$OS" in
+    ubuntu|debian|centos|rhel|rocky|almalinux|fedora)
+        print_ok "Supported OS: $OS"
+        ;;
+    *)
+        print_warn "OS '$OS' is not officially supported. The script will try to continue."
+        print_info "Supported: Ubuntu, Debian, CentOS, RHEL, Rocky, AlmaLinux, Fedora"
+        read -p "  Continue anyway? (y/N): " CONT
+        [[ ! "$CONT" =~ ^[Yy]$ ]] && exit 0
+        ;;
+esac
+
+# ---- Helper: package installer ----
+pkg_install() {
+    case "$OS" in
+        ubuntu|debian)
+            $SUDO apt-get install -y -qq "$@" > /dev/null 2>&1
+            ;;
+        centos|rhel|rocky|almalinux)
+            $SUDO yum install -y -q "$@" > /dev/null 2>&1
+            ;;
+        fedora)
+            $SUDO dnf install -y -q "$@" > /dev/null 2>&1
+            ;;
+    esac
+}
+
+pkg_update() {
+    case "$OS" in
+        ubuntu|debian)
+            $SUDO apt-get update -qq > /dev/null 2>&1
+            ;;
+        centos|rhel|rocky|almalinux)
+            $SUDO yum makecache -q > /dev/null 2>&1
+            ;;
+        fedora)
+            $SUDO dnf makecache -q > /dev/null 2>&1
+            ;;
+    esac
+}
+
+# ============================================================
+#  STEP 1: Install ALL prerequisites automatically
+# ============================================================
+print_step "1/9 - Installing prerequisites"
 
 echo ""
-echo -e "  ${BOLD}Checking required software...${NC}"
+echo -e "  ${BOLD}Phase 1: Basic system tools${NC}"
 echo ""
 
-NEED_INSTALL=()
+# Update package lists first
+print_info "Updating package lists..."
+pkg_update
+print_ok "Package lists updated"
+
+# Install essential tools that the rest of the script depends on
+BASIC_TOOLS_DEB="curl wget git ca-certificates gnupg lsb-release software-properties-common build-essential"
+BASIC_TOOLS_RPM="curl wget git ca-certificates gnupg2"
+
+case "$OS" in
+    ubuntu|debian)
+        print_info "Installing basic tools..."
+        $SUDO apt-get install -y -qq $BASIC_TOOLS_DEB > /dev/null 2>&1
+        ;;
+    centos|rhel|rocky|almalinux)
+        print_info "Installing basic tools..."
+        $SUDO yum install -y -q $BASIC_TOOLS_RPM > /dev/null 2>&1
+        $SUDO yum groupinstall -y -q "Development Tools" > /dev/null 2>&1 || true
+        ;;
+    fedora)
+        print_info "Installing basic tools..."
+        $SUDO dnf install -y -q $BASIC_TOOLS_RPM > /dev/null 2>&1
+        $SUDO dnf groupinstall -y -q "Development Tools" > /dev/null 2>&1 || true
+        ;;
+esac
+
+for tool in curl wget git; do
+    if check_command "$tool"; then
+        print_ok "$tool"
+    else
+        print_warn "$tool not found after install attempt"
+    fi
+done
+
+# ---- Python 3 ----
+echo ""
+echo -e "  ${BOLD}Phase 2: Python 3${NC}"
+echo ""
 
 if check_command python3; then
-    PY_VER=$(python3 --version 2>&1 | awk '{print $2}')
-    print_info "Python $PY_VER"
+    PYTHON_VER=$(python3 --version 2>&1 | awk '{print $2}')
+    print_ok "Python $PYTHON_VER"
 else
-    NEED_INSTALL+=("python3")
-    print_err "Python 3 not found"
-fi
-
-if check_command node; then
-    NODE_VER=$(node -v)
-    print_info "Node.js $NODE_VER"
-else
-    NEED_INSTALL+=("nodejs")
-    print_err "Node.js not found"
-fi
-
-if ! check_command yarn; then
-    print_warn "yarn not found. Installing..."
-    npm install -g yarn 2>/dev/null && print_ok "yarn installed" || {
-        print_err "Could not install yarn. Run: npm install -g yarn"
-        exit 1
-    }
-fi
-
-if ! check_command mongod && ! check_command mongosh; then
-    if systemctl is-active --quiet mongod 2>/dev/null; then
-        print_ok "MongoDB service running"
+    print_warn "Python 3 not found. Installing..."
+    case "$OS" in
+        ubuntu|debian)
+            $SUDO apt-get install -y -qq python3 python3-pip python3-venv python3-dev > /dev/null 2>&1
+            ;;
+        centos|rhel|rocky|almalinux)
+            $SUDO yum install -y -q python3 python3-pip python3-devel > /dev/null 2>&1
+            ;;
+        fedora)
+            $SUDO dnf install -y -q python3 python3-pip python3-devel > /dev/null 2>&1
+            ;;
+    esac
+    if check_command python3; then
+        print_ok "Python $(python3 --version 2>&1 | awk '{print $2}') installed"
     else
-        print_warn "MongoDB not detected. Make sure it's running and accessible."
+        fail_exit "Python 3 installation failed. Install manually: https://www.python.org/downloads/"
     fi
 fi
 
-if [ ${#NEED_INSTALL[@]} -gt 0 ]; then
-    echo ""
-    print_err "Missing: ${NEED_INSTALL[*]}"
-    echo ""
-    echo -e "  Install them first:"
-    echo -e "    ${DIM}Ubuntu/Debian: sudo apt install python3 python3-pip python3-venv nodejs npm${NC}"
-    echo ""
-    read -p "  Continue anyway? (y/N): " CONTINUE
-    if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
-        exit 1
+# Ensure pip3
+if ! python3 -m pip --version > /dev/null 2>&1; then
+    print_warn "pip not found. Installing..."
+    case "$OS" in
+        ubuntu|debian)
+            $SUDO apt-get install -y -qq python3-pip > /dev/null 2>&1
+            ;;
+        *)
+            curl -sS https://bootstrap.pypa.io/get-pip.py | python3 > /dev/null 2>&1 || true
+            ;;
+    esac
+    if python3 -m pip --version > /dev/null 2>&1; then
+        print_ok "pip installed"
+    else
+        print_warn "pip may not be available. Will try to continue."
+    fi
+else
+    print_ok "pip $(python3 -m pip --version 2>&1 | awk '{print $2}')"
+fi
+
+# Ensure python3-venv
+if ! python3 -c "import venv" > /dev/null 2>&1; then
+    print_warn "python3-venv not found. Installing..."
+    case "$OS" in
+        ubuntu|debian)
+            # Get the python version to install the correct venv package
+            PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+            $SUDO apt-get install -y -qq "python${PY_VER}-venv" python3-venv > /dev/null 2>&1
+            ;;
+        centos|rhel|rocky|almalinux)
+            $SUDO yum install -y -q python3-libs > /dev/null 2>&1 || true
+            ;;
+        fedora)
+            $SUDO dnf install -y -q python3-libs > /dev/null 2>&1 || true
+            ;;
+    esac
+    if python3 -c "import venv" > /dev/null 2>&1; then
+        print_ok "python3-venv installed"
+    else
+        print_warn "python3-venv may not be available. Will try to continue."
+    fi
+else
+    print_ok "python3-venv"
+fi
+
+# ---- Node.js 20.x ----
+echo ""
+echo -e "  ${BOLD}Phase 3: Node.js${NC}"
+echo ""
+
+NEED_NODE=false
+if check_command node; then
+    NODE_VER=$(node -v 2>&1)
+    NODE_MAJOR=$(echo "$NODE_VER" | sed 's/v//' | cut -d. -f1)
+    if [ "$NODE_MAJOR" -ge 18 ] 2>/dev/null; then
+        print_ok "Node.js $NODE_VER"
+    else
+        print_warn "Node.js $NODE_VER is too old (need 18+). Will upgrade..."
+        NEED_NODE=true
+    fi
+else
+    print_warn "Node.js not found."
+    NEED_NODE=true
+fi
+
+if [ "$NEED_NODE" = true ]; then
+    print_info "Installing Node.js 20.x..."
+    case "$OS" in
+        ubuntu|debian)
+            # Remove old nodejs if present
+            $SUDO apt-get remove -y -qq nodejs > /dev/null 2>&1 || true
+
+            # Setup NodeSource repository
+            $SUDO mkdir -p /etc/apt/keyrings
+            curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | $SUDO gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg --yes 2>/dev/null
+            echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | $SUDO tee /etc/apt/sources.list.d/nodesource.list > /dev/null
+            $SUDO apt-get update -qq > /dev/null 2>&1
+            $SUDO apt-get install -y -qq nodejs > /dev/null 2>&1
+
+            # If NodeSource fails, try alternative: install via nvm-like approach
+            if ! check_command node; then
+                print_warn "NodeSource failed. Trying alternative install..."
+                curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO -E bash - > /dev/null 2>&1
+                $SUDO apt-get install -y -qq nodejs > /dev/null 2>&1
+            fi
+            ;;
+        centos|rhel|rocky|almalinux)
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | $SUDO bash - > /dev/null 2>&1
+            $SUDO yum install -y -q nodejs > /dev/null 2>&1
+            ;;
+        fedora)
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | $SUDO bash - > /dev/null 2>&1
+            $SUDO dnf install -y -q nodejs > /dev/null 2>&1
+            ;;
+        *)
+            fail_exit "Cannot auto-install Node.js on $OS. Install from https://nodejs.org/ and re-run."
+            ;;
+    esac
+
+    if check_command node; then
+        print_ok "Node.js $(node -v) installed"
+    else
+        fail_exit "Node.js installation failed. Install manually from https://nodejs.org/ and re-run."
     fi
 fi
 
-# ---- Step 2: Domain & SSL Configuration ----
+# Ensure npm is available
+if ! check_command npm; then
+    print_warn "npm not found. Installing..."
+    case "$OS" in
+        ubuntu|debian)
+            $SUDO apt-get install -y -qq npm > /dev/null 2>&1
+            ;;
+    esac
+    if check_command npm; then
+        print_ok "npm $(npm -v)"
+    else
+        print_warn "npm not found. Will try corepack for yarn."
+    fi
+else
+    print_ok "npm $(npm -v)"
+fi
+
+# ---- Yarn ----
+echo ""
+echo -e "  ${BOLD}Phase 4: Yarn${NC}"
+echo ""
+
+if check_command yarn; then
+    print_ok "yarn $(yarn -v)"
+else
+    print_info "Installing yarn..."
+    YARN_INSTALLED=false
+
+    # Method 1: via npm
+    if check_command npm; then
+        $SUDO npm install -g yarn > /dev/null 2>&1 && YARN_INSTALLED=true
+    fi
+
+    # Method 2: via corepack (comes with Node.js 16+)
+    if [ "$YARN_INSTALLED" = false ] && check_command corepack; then
+        $SUDO corepack enable > /dev/null 2>&1
+        corepack prepare yarn@stable --activate > /dev/null 2>&1 && YARN_INSTALLED=true
+    fi
+
+    # Method 3: via official apt repo
+    if [ "$YARN_INSTALLED" = false ]; then
+        case "$OS" in
+            ubuntu|debian)
+                curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | $SUDO gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg --yes 2>/dev/null
+                echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian/ stable main" | $SUDO tee /etc/apt/sources.list.d/yarn.list > /dev/null
+                $SUDO apt-get update -qq > /dev/null 2>&1
+                $SUDO apt-get install -y -qq yarn > /dev/null 2>&1 && YARN_INSTALLED=true
+                ;;
+        esac
+    fi
+
+    if check_command yarn; then
+        print_ok "yarn $(yarn -v) installed"
+    else
+        fail_exit "Could not install yarn. Install manually: https://yarnpkg.com/getting-started/install"
+    fi
+fi
+
+# ---- MongoDB ----
+echo ""
+echo -e "  ${BOLD}Phase 5: MongoDB${NC}"
+echo ""
+
+MONGO_RUNNING=false
+if command -v mongod > /dev/null 2>&1 || command -v mongosh > /dev/null 2>&1; then
+    MONGO_RUNNING=true
+fi
+if systemctl is-active --quiet mongod 2>/dev/null; then
+    MONGO_RUNNING=true
+fi
+# Also check if mongo is reachable on default port
+if curl -s --connect-timeout 2 http://127.0.0.1:27017 > /dev/null 2>&1; then
+    MONGO_RUNNING=true
+fi
+
+if [ "$MONGO_RUNNING" = true ]; then
+    print_ok "MongoDB detected"
+else
+    print_warn "MongoDB not found. Installing MongoDB 7.0..."
+    case "$OS" in
+        ubuntu|debian)
+            # Install gnupg if needed
+            $SUDO apt-get install -y -qq gnupg > /dev/null 2>&1
+
+            # Import MongoDB public GPG key
+            curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | $SUDO gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg --yes 2>/dev/null
+
+            # Determine the correct codename
+            if [ -n "$OS_CODENAME" ]; then
+                CODENAME="$OS_CODENAME"
+            else
+                CODENAME=$(lsb_release -cs 2>/dev/null || echo "jammy")
+            fi
+
+            # For newer Ubuntu versions that MongoDB may not support yet, fall back
+            case "$CODENAME" in
+                jammy|focal|bionic) ;; # supported
+                noble|mantic|lunar|kinetic) CODENAME="jammy" ;; # use jammy as fallback
+                bookworm|bullseye|buster) ;; # debian supported
+                *) CODENAME="jammy" ;; # default fallback
+            esac
+
+            if [ "$OS" = "debian" ]; then
+                echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/debian ${CODENAME}/mongodb-org/7.0 main" | $SUDO tee /etc/apt/sources.list.d/mongodb-org-7.0.list > /dev/null
+            else
+                echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/7.0 multiverse" | $SUDO tee /etc/apt/sources.list.d/mongodb-org-7.0.list > /dev/null
+            fi
+
+            $SUDO apt-get update -qq > /dev/null 2>&1
+            $SUDO apt-get install -y -qq mongodb-org > /dev/null 2>&1
+
+            # Fallback: try community package if mongodb-org fails
+            if ! check_command mongod; then
+                $SUDO apt-get install -y -qq mongodb > /dev/null 2>&1
+            fi
+            ;;
+        centos|rhel|rocky|almalinux|fedora)
+            cat << 'REPOEOF' | $SUDO tee /etc/yum.repos.d/mongodb-org-7.0.repo > /dev/null
+[mongodb-org-7.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/7.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc
+REPOEOF
+            $SUDO yum install -y -q mongodb-org > /dev/null 2>&1 || $SUDO dnf install -y -q mongodb-org > /dev/null 2>&1
+            ;;
+        *)
+            print_warn "Cannot auto-install MongoDB on $OS."
+            print_info "Install from: https://www.mongodb.com/docs/manual/installation/"
+            ;;
+    esac
+
+    # Enable and start MongoDB
+    $SUDO systemctl daemon-reload > /dev/null 2>&1 || true
+    $SUDO systemctl enable mongod > /dev/null 2>&1 || true
+    $SUDO systemctl start mongod > /dev/null 2>&1 || true
+
+    # Wait and verify
+    sleep 3
+    if systemctl is-active --quiet mongod 2>/dev/null; then
+        print_ok "MongoDB installed and running"
+    else
+        # Try starting with different service name
+        $SUDO systemctl start mongodb > /dev/null 2>&1 || true
+        if systemctl is-active --quiet mongodb 2>/dev/null; then
+            print_ok "MongoDB installed and running (mongodb service)"
+        else
+            print_warn "MongoDB installed but may need manual start:"
+            print_info "  sudo systemctl start mongod"
+            print_info "  sudo journalctl -u mongod -n 20"
+            read -p "  Continue anyway? (y/N): " CONT_MONGO
+            [[ ! "$CONT_MONGO" =~ ^[Yy]$ ]] && exit 1
+        fi
+    fi
+fi
+
+echo ""
+print_ok "All prerequisites installed successfully"
+
+# ============================================================
+#  STEP 2: Domain & SSL Configuration
+# ============================================================
 print_step "2/9 - Domain & SSL Configuration"
 
 echo ""
@@ -145,40 +500,48 @@ if [ -n "$DOMAIN" ]; then
     USE_SSL=true
     PUBLIC_URL="https://${DOMAIN}"
 
-    # Install nginx if needed
-    if ! command -v nginx &> /dev/null; then
-        print_warn "Installing nginx..."
-        if command -v apt &> /dev/null; then
-            sudo apt update -qq && sudo apt install -y -qq nginx
-        elif command -v yum &> /dev/null; then
-            sudo yum install -y -q epel-release && sudo yum install -y -q nginx
-        elif command -v dnf &> /dev/null; then
-            sudo dnf install -y -q nginx
+    # Install nginx if not present
+    if ! check_command nginx; then
+        print_info "Installing nginx..."
+        case "$OS" in
+            ubuntu|debian) $SUDO apt-get install -y -qq nginx > /dev/null 2>&1 ;;
+            centos|rhel|rocky|almalinux) $SUDO yum install -y -q epel-release > /dev/null 2>&1 && $SUDO yum install -y -q nginx > /dev/null 2>&1 ;;
+            fedora) $SUDO dnf install -y -q nginx > /dev/null 2>&1 ;;
+            *) fail_exit "Cannot auto-install nginx on $OS." ;;
+        esac
+        if check_command nginx; then
+            print_ok "nginx installed"
         else
-            print_err "Cannot auto-install nginx. Install it manually."
-            exit 1
+            fail_exit "nginx installation failed."
         fi
-        print_ok "nginx installed"
+    else
+        print_ok "nginx"
     fi
 
-    # Install certbot if needed
-    if ! command -v certbot &> /dev/null; then
-        print_warn "Installing certbot..."
-        if command -v apt &> /dev/null; then
-            sudo apt install -y -qq certbot python3-certbot-nginx
-        elif command -v yum &> /dev/null; then
-            sudo yum install -y -q certbot python3-certbot-nginx
-        elif command -v dnf &> /dev/null; then
-            sudo dnf install -y -q certbot python3-certbot-nginx
+    # Install certbot if not present
+    if ! check_command certbot; then
+        print_info "Installing certbot..."
+        case "$OS" in
+            ubuntu|debian) $SUDO apt-get install -y -qq certbot python3-certbot-nginx > /dev/null 2>&1 ;;
+            centos|rhel|rocky|almalinux) $SUDO yum install -y -q certbot python3-certbot-nginx > /dev/null 2>&1 ;;
+            fedora) $SUDO dnf install -y -q certbot python3-certbot-nginx > /dev/null 2>&1 ;;
+        esac
+        if check_command certbot; then
+            print_ok "certbot installed"
+        else
+            print_warn "certbot installation failed. SSL setup may need manual steps."
         fi
-        print_ok "certbot installed"
+    else
+        print_ok "certbot"
     fi
 else
     PUBLIC_URL="http://localhost:${BACKEND_PORT}"
-    print_info "No domain. Running on localhost."
+    print_info "No domain entered. Running on localhost."
 fi
 
-# ---- Step 3: Cloudflare Configuration ----
+# ============================================================
+#  STEP 3: Cloudflare Configuration
+# ============================================================
 print_step "3/9 - Cloudflare Configuration"
 
 echo ""
@@ -197,7 +560,9 @@ while [ -z "$CF_ZONE_ID" ]; do
     read -p "  Cloudflare Zone ID: " CF_ZONE_ID
 done
 
-# ---- Step 4: Database Configuration ----
+# ============================================================
+#  STEP 4: Database Configuration
+# ============================================================
 print_step "4/9 - Database Configuration"
 
 echo ""
@@ -207,9 +572,11 @@ MONGO_URL=${MONGO_URL:-mongodb://localhost:27017}
 read -p "  Database name [ddns_land]: " DB_NAME
 DB_NAME=${DB_NAME:-ddns_land}
 
-print_ok "Database: ${DB_NAME}"
+print_ok "Database: ${DB_NAME} at ${MONGO_URL}"
 
-# ---- Step 5: Admin Account ----
+# ============================================================
+#  STEP 5: Admin Account
+# ============================================================
 print_step "5/9 - Admin Account"
 
 echo ""
@@ -230,37 +597,66 @@ while [ ${#ADMIN_PASSWORD} -lt 6 ]; do
     echo ""
 done
 
-# Generate JWT secret
-JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || head -c 32 /dev/urandom | xxd -p)
+JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || head -c 32 /dev/urandom | xxd -p | tr -d '\n')
 
-# ---- Step 6: Install Dependencies ----
-print_step "6/9 - Installing Dependencies"
+# ============================================================
+#  STEP 6: Install Application Dependencies
+# ============================================================
+print_step "6/9 - Installing Application Dependencies"
 
 echo ""
-echo -e "  ${BOLD}Backend...${NC}"
+echo -e "  ${BOLD}Backend setup...${NC}"
 
 cd "$PROJECT_DIR"
 
-# Create Python venv if not exists
+# Create Python virtual environment
 if [ ! -d "backend/venv" ]; then
+    print_info "Creating Python virtual environment..."
     python3 -m venv backend/venv
-    print_ok "Python venv created"
+    if [ $? -eq 0 ]; then
+        print_ok "Python venv created"
+    else
+        fail_exit "Failed to create Python virtual environment. Ensure python3-venv is installed."
+    fi
+else
+    print_ok "Python venv exists"
 fi
 
-# Activate and install
+# Activate venv and install packages
 source backend/venv/bin/activate
-pip install --upgrade pip -q 2>&1 | tail -1
-pip install -r backend/requirements.txt -q 2>&1 | tail -1
-print_ok "Backend packages installed"
+print_info "Upgrading pip..."
+pip install --upgrade pip > /dev/null 2>&1
+print_info "Installing backend dependencies..."
+pip install -r backend/requirements.txt > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    print_ok "Backend packages installed"
+else
+    print_warn "Some backend packages may have failed. Retrying..."
+    pip install -r backend/requirements.txt 2>&1 | tail -5
+fi
+
+# Ensure uvicorn is installed
+if [ ! -f "$PROJECT_DIR/backend/venv/bin/uvicorn" ]; then
+    print_info "Installing uvicorn..."
+    pip install uvicorn > /dev/null 2>&1
+fi
 
 echo ""
-echo -e "  ${BOLD}Frontend...${NC}"
+echo -e "  ${BOLD}Frontend setup...${NC}"
 cd "$PROJECT_DIR/frontend"
-yarn install --silent 2>/dev/null || yarn install
-print_ok "Frontend packages installed"
+print_info "Installing frontend packages (this may take a few minutes)..."
+yarn install --network-timeout 120000 2>&1 | tail -3
+if [ $? -eq 0 ]; then
+    print_ok "Frontend packages installed"
+else
+    print_warn "Retrying frontend install..."
+    yarn install 2>&1 | tail -5
+fi
 cd "$PROJECT_DIR"
 
-# ---- Step 7: Configure Environment ----
+# ============================================================
+#  STEP 7: Configure Environment
+# ============================================================
 print_step "7/9 - Configuring Environment"
 
 # Backend .env
@@ -273,44 +669,40 @@ CLOUDFLARE_ZONE_ID=${CF_ZONE_ID}
 JWT_SECRET=${JWT_SECRET}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 ENVEOF
-print_ok "backend/.env"
+print_ok "backend/.env configured"
 
 # Frontend .env
 cat > "$PROJECT_DIR/frontend/.env" << ENVEOF
 REACT_APP_BACKEND_URL=${PUBLIC_URL}
 ENVEOF
-print_ok "frontend/.env"
+print_ok "frontend/.env configured"
 
 # Build frontend
 echo ""
-echo -e "  ${BOLD}Building frontend...${NC}"
+echo -e "  ${BOLD}Building frontend for production...${NC}"
 cd "$PROJECT_DIR/frontend"
-yarn build 2>&1 | tail -3
-print_ok "Frontend build complete"
+yarn build 2>&1 | tail -5
+if [ -d "build" ] && [ -f "build/index.html" ]; then
+    print_ok "Frontend build complete"
+else
+    print_warn "Frontend build may have issues. Check manually: cd frontend && yarn build"
+fi
 cd "$PROJECT_DIR"
 
-# ---- Step 8: Setup Services ----
+# ============================================================
+#  STEP 8: Setup Services
+# ============================================================
 print_step "8/9 - Setting up Services"
 
-# Get the full path to uvicorn in venv
-UVICORN_PATH="$PROJECT_DIR/backend/venv/bin/uvicorn"
 PYTHON_PATH="$PROJECT_DIR/backend/venv/bin/python"
 
-# Verify uvicorn exists
-if [ ! -f "$UVICORN_PATH" ]; then
-    print_warn "uvicorn not found at $UVICORN_PATH, trying pip install..."
-    source "$PROJECT_DIR/backend/venv/bin/activate"
-    pip install uvicorn -q
-fi
-
 # Stop existing service if running
-sudo systemctl stop ddns-backend 2>/dev/null || true
+$SUDO systemctl stop ddns-backend > /dev/null 2>&1 || true
 
-# Create systemd service
 echo ""
-echo -e "  ${BOLD}Creating backend service...${NC}"
+echo -e "  ${BOLD}Creating backend systemd service...${NC}"
 
-sudo tee /etc/systemd/system/ddns-backend.service > /dev/null << SVCEOF
+$SUDO tee /etc/systemd/system/ddns-backend.service > /dev/null << SVCEOF
 [Unit]
 Description=DNSLAB.BIZ Backend API
 After=network.target mongod.service
@@ -332,18 +724,18 @@ StandardError=journal
 WantedBy=multi-user.target
 SVCEOF
 
-sudo systemctl daemon-reload
-sudo systemctl enable ddns-backend --quiet 2>/dev/null
-sudo systemctl restart ddns-backend
+$SUDO systemctl daemon-reload
+$SUDO systemctl enable ddns-backend --quiet > /dev/null 2>&1
+$SUDO systemctl restart ddns-backend
 
-# Wait and check if backend started
 echo -e "  ${DIM}Waiting for backend to start...${NC}"
-sleep 4
+sleep 5
 
 RETRIES=0
 BACKEND_OK=false
-while [ $RETRIES -lt 5 ]; do
-    if curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null | grep -q "200"; then
+while [ $RETRIES -lt 10 ]; do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null || echo "000")
+    if [ "$HTTP_CODE" = "200" ]; then
         BACKEND_OK=true
         break
     fi
@@ -356,40 +748,32 @@ if [ "$BACKEND_OK" = true ]; then
 else
     print_err "Backend may not have started properly."
     echo ""
-    echo -e "  ${YELLOW}Checking logs:${NC}"
-    sudo journalctl -u ddns-backend -n 15 --no-pager 2>/dev/null || true
+    $SUDO journalctl -u ddns-backend -n 20 --no-pager 2>/dev/null || true
     echo ""
-    print_warn "Try: sudo journalctl -u ddns-backend -f"
-    echo ""
-    read -p "  Continue with nginx/SSL setup anyway? (y/N): " CONT_ANYWAY
+    print_warn "Debug with: sudo journalctl -u ddns-backend -f"
+    read -p "  Continue anyway? (y/N): " CONT_ANYWAY
     if [[ ! "$CONT_ANYWAY" =~ ^[Yy]$ ]]; then
-        echo ""
-        echo -e "  ${BOLD}Fix the backend and re-run:${NC}"
-        echo -e "    ${DIM}sudo journalctl -u ddns-backend -n 30${NC}"
-        echo -e "    ${DIM}sudo systemctl restart ddns-backend${NC}"
         exit 1
     fi
 fi
 
-# Setup nginx if domain is configured
+# ---- Nginx & SSL (if domain is set) ----
 if [ "$USE_SSL" = true ]; then
     echo ""
     echo -e "  ${BOLD}Configuring nginx...${NC}"
 
     # Create nginx config
-    sudo tee /etc/nginx/sites-available/dnslab-biz > /dev/null << NGXEOF
+    $SUDO tee /etc/nginx/sites-available/dnslab-biz > /dev/null << NGXEOF
 server {
     listen 80;
     server_name ${DOMAIN};
 
-    # Frontend - serve static build
     location / {
         root ${PROJECT_DIR}/frontend/build;
         index index.html;
         try_files \$uri \$uri/ /index.html;
     }
 
-    # Backend API proxy
     location /api/ {
         proxy_pass http://127.0.0.1:${BACKEND_PORT};
         proxy_http_version 1.1;
@@ -403,7 +787,6 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Static assets caching
     location /static/ {
         root ${PROJECT_DIR}/frontend/build;
         expires 1y;
@@ -412,31 +795,29 @@ server {
 }
 NGXEOF
 
-    # Ensure sites-enabled directory exists
-    sudo mkdir -p /etc/nginx/sites-enabled
-
     # Enable site
-    sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null
-    sudo ln -sf /etc/nginx/sites-available/dnslab-biz /etc/nginx/sites-enabled/
+    $SUDO mkdir -p /etc/nginx/sites-enabled
+    $SUDO rm -f /etc/nginx/sites-enabled/default > /dev/null 2>&1
+    $SUDO ln -sf /etc/nginx/sites-available/dnslab-biz /etc/nginx/sites-enabled/
 
     # Test and restart nginx
-    if sudo nginx -t 2>/dev/null; then
-        sudo systemctl restart nginx
+    if $SUDO nginx -t > /dev/null 2>&1; then
+        $SUDO systemctl restart nginx
         print_ok "nginx configured for ${DOMAIN}"
     else
         print_err "nginx config error:"
-        sudo nginx -t
+        $SUDO nginx -t
     fi
 
-    # Get SSL certificate
+    # Obtain SSL certificate
     echo ""
     echo -e "  ${BOLD}Obtaining SSL certificate...${NC}"
 
-    sudo certbot --nginx -d "${DOMAIN}" --email "${SSL_EMAIL}" --agree-tos --non-interactive --redirect 2>&1 | while IFS= read -r line; do
+    $SUDO certbot --nginx -d "${DOMAIN}" --email "${SSL_EMAIL}" --agree-tos --non-interactive --redirect 2>&1 | while IFS= read -r line; do
         echo -e "  ${DIM}${line}${NC}"
     done
 
-    if sudo certbot certificates 2>/dev/null | grep -q "${DOMAIN}"; then
+    if $SUDO certbot certificates 2>/dev/null | grep -q "${DOMAIN}"; then
         print_ok "SSL certificate active for ${DOMAIN}"
     else
         print_warn "SSL may need manual setup: sudo certbot --nginx -d ${DOMAIN}"
@@ -447,33 +828,30 @@ NGXEOF
         (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'") | crontab -
         print_ok "SSL auto-renewal cron added"
     fi
+
+    # Fix permissions
+    chmod 755 "$(dirname "$PROJECT_DIR")" > /dev/null 2>&1 || true
+    chmod 755 "$PROJECT_DIR" > /dev/null 2>&1 || true
+    chmod -R 755 "$PROJECT_DIR/frontend/build" > /dev/null 2>&1 || true
+    print_ok "File permissions set"
 fi
 
-# ---- Step 9: Setup Admin Account ----
+# ============================================================
+#  STEP 9: Setup Admin Account
+# ============================================================
 print_step "9/9 - Creating Admin Account"
 
 API_BASE="http://127.0.0.1:${BACKEND_PORT}/api"
 
-# Wait for backend to be ready
 echo ""
-echo -e "  ${DIM}Waiting for API...${NC}"
-sleep 2
+echo -e "  ${DIM}Waiting for API to be ready...${NC}"
+sleep 3
 
-# Check backend health first
 HEALTH=$(curl -s "${API_BASE}/health" 2>/dev/null)
 if echo "$HEALTH" | grep -q "healthy"; then
     print_ok "Backend API is healthy"
-else
-    print_warn "Backend API not responding. Admin setup skipped."
-    print_info "After fixing backend, register manually and call:"
-    print_info "  curl -X POST ${API_BASE}/admin/setup"
-    echo ""
-    # Skip to final output
-    ADMIN_SETUP_SKIPPED=true
-fi
 
-if [ "${ADMIN_SETUP_SKIPPED}" != "true" ]; then
-    # Register admin
+    # Register admin user
     REG_RESP=$(curl -s -w "\n%{http_code}" -X POST "${API_BASE}/auth/register" \
         -H "Content-Type: application/json" \
         -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" 2>/dev/null)
@@ -486,30 +864,33 @@ if [ "${ADMIN_SETUP_SKIPPED}" != "true" ]; then
     elif echo "$REG_BODY" | grep -q "already registered"; then
         print_warn "Admin user already exists"
     else
-        print_warn "Registration issue (HTTP $REG_HTTP). Will try admin setup anyway."
+        print_warn "Registration response: HTTP $REG_HTTP"
     fi
 
     # Promote to admin
-    SETUP_RESP=$(curl -s "${API_BASE}/admin/setup" -X POST 2>/dev/null)
+    SETUP_RESP=$(curl -s -X POST "${API_BASE}/admin/setup" 2>/dev/null)
     if echo "$SETUP_RESP" | grep -q "now admin"; then
         print_ok "Admin role activated for ${ADMIN_EMAIL}"
-    elif echo "$SETUP_RESP" | grep -q "Not found"; then
-        print_warn "User not found. Register first at the website, then run:"
-        print_info "  curl -X POST ${API_BASE}/admin/setup"
     else
         print_warn "Admin setup: $SETUP_RESP"
     fi
+else
+    print_warn "Backend not responding. After fixing, run these commands manually:"
+    print_info "  curl -X POST ${API_BASE}/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"YOUR_PASSWORD\"}'"
+    print_info "  curl -X POST ${API_BASE}/admin/setup"
 fi
 
-# ---- Done! ----
+# ============================================================
+#  DONE!
+# ============================================================
 echo ""
 echo ""
 echo -e "${GREEN}${BOLD}"
-echo "  ╔═══════════════════════════════════════════════════════╗"
-echo "  ║                                                       ║"
-echo "  ║     DNSLAB.BIZ Installation Complete!                  ║"
-echo "  ║                                                       ║"
-echo "  ╚═══════════════════════════════════════════════════════╝"
+echo "  +=========================================================+"
+echo "  |                                                         |"
+echo "  |     DNSLAB.BIZ Installation Complete!                   |"
+echo "  |                                                         |"
+echo "  +=========================================================+"
 echo -e "${NC}"
 echo ""
 
@@ -526,14 +907,14 @@ fi
 echo ""
 echo -e "  ${BOLD}Admin Email:${NC}    ${ADMIN_EMAIL}"
 echo ""
-echo -e "  ${BOLD}Commands:${NC}"
-echo -e "    sudo systemctl status ddns-backend     ${DIM}# Status${NC}"
-echo -e "    sudo systemctl restart ddns-backend     ${DIM}# Restart${NC}"
-echo -e "    sudo journalctl -u ddns-backend -f      ${DIM}# Logs${NC}"
+echo -e "  ${BOLD}Useful Commands:${NC}"
+echo -e "    sudo systemctl status ddns-backend     ${DIM}# Check status${NC}"
+echo -e "    sudo systemctl restart ddns-backend     ${DIM}# Restart backend${NC}"
+echo -e "    sudo journalctl -u ddns-backend -f      ${DIM}# View logs${NC}"
 
 if [ "$USE_SSL" = true ]; then
     echo -e "    sudo systemctl restart nginx            ${DIM}# Restart nginx${NC}"
-    echo -e "    sudo certbot renew --dry-run            ${DIM}# Test SSL${NC}"
+    echo -e "    sudo certbot renew --dry-run            ${DIM}# Test SSL renewal${NC}"
 fi
 
 echo ""
