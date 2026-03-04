@@ -16,7 +16,7 @@
 
 ## Features
 
-- **Free DNS Records** - Create up to 2 A, AAAA, or CNAME records for free
+- **Free DNS Records** - Create up to 2 A, AAAA, CNAME, or NS records for free
 - **Real Cloudflare DNS** - Records are created on Cloudflare's global infrastructure
 - **User Dashboard** - Clean, modern dashboard for managing all DNS records
 - **Admin Panel** - Full user management, plan control, and platform statistics
@@ -214,7 +214,7 @@ dnslab-biz/
 | Feature | Free | Premium |
 |---------|------|---------|
 | DNS Records | 2 | Unlimited |
-| Record Types | A, AAAA, CNAME | A, AAAA, CNAME |
+| Record Types | A, AAAA, CNAME, NS | A, AAAA, CNAME, NS |
 | Cloudflare DNS | Yes | Yes |
 | Dashboard | Yes | Yes |
 | Priority Support | No | Yes |

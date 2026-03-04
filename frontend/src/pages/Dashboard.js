@@ -178,6 +178,7 @@ export default function Dashboard() {
   const getContentPlaceholder = (type) => {
     if (type === 'A') return t('dashboard.content_placeholder_a');
     if (type === 'AAAA') return t('dashboard.content_placeholder_aaaa');
+    if (type === 'NS') return t('dashboard.content_placeholder_ns');
     return t('dashboard.content_placeholder_cname');
   };
 
@@ -375,7 +376,7 @@ export default function Dashboard() {
               <Label>{t('dashboard.record_type')}</Label>
               <Select
                 value={createForm.record_type}
-                onValueChange={(val) => setCreateForm({ ...createForm, record_type: val, content: '' })}
+                onValueChange={(val) => setCreateForm({ ...createForm, record_type: val, content: '', proxied: val === 'NS' ? false : createForm.proxied })}
               >
                 <SelectTrigger data-testid="create-type-select">
                   <SelectValue />
@@ -384,6 +385,7 @@ export default function Dashboard() {
                   <SelectItem value="A">A (IPv4)</SelectItem>
                   <SelectItem value="AAAA">AAAA (IPv6)</SelectItem>
                   <SelectItem value="CNAME">CNAME</SelectItem>
+                  <SelectItem value="NS">NS (Nameserver)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -414,6 +416,7 @@ export default function Dashboard() {
                 dir="ltr"
               />
             </div>
+            {createForm.record_type !== 'NS' && (
             <div className="flex items-center justify-between">
               <Label>{t('dashboard.proxied')}</Label>
               <Switch
@@ -422,6 +425,7 @@ export default function Dashboard() {
                 data-testid="create-proxied-switch"
               />
             </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 {t('dashboard.cancel')}

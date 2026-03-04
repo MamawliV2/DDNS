@@ -213,8 +213,8 @@ async def list_records(user=Depends(get_current_user)):
 
 @api_router.post("/dns/records")
 async def create_record(data: DNSRecordCreate, user=Depends(get_current_user)):
-    if data.record_type not in ["A", "AAAA", "CNAME"]:
-        raise HTTPException(status_code=400, detail="Record type must be A, AAAA, or CNAME")
+    if data.record_type not in ["A", "AAAA", "CNAME", "NS"]:
+        raise HTTPException(status_code=400, detail="Record type must be A, AAAA, CNAME, or NS")
 
     if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$', data.name):
         raise HTTPException(status_code=400, detail="Invalid subdomain name. Use only letters, numbers, and hyphens.")
@@ -245,13 +245,16 @@ async def create_record(data: DNSRecordCreate, user=Depends(get_current_user)):
     elif data.record_type == "CNAME":
         if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9.\-]+[a-zA-Z0-9]$', data.content):
             raise HTTPException(status_code=400, detail="Invalid CNAME target")
+    elif data.record_type == "NS":
+        if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9.\-]+[a-zA-Z0-9]$', data.content):
+            raise HTTPException(status_code=400, detail="Invalid nameserver (e.g. ns1.example.com)")
 
     cf_result = await cf_create_record(
         record_type=data.record_type,
         name=full_name,
         content=data.content,
         ttl=data.ttl,
-        proxied=data.proxied
+        proxied=False if data.record_type == "NS" else data.proxied
     )
 
     record = {
@@ -296,6 +299,9 @@ async def update_record(record_id: str, data: DNSRecordUpdate, user=Depends(get_
     elif record["record_type"] == "CNAME":
         if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9.\-]+[a-zA-Z0-9]$', data.content):
             raise HTTPException(status_code=400, detail="Invalid CNAME target")
+    elif record["record_type"] == "NS":
+        if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9.\-]+[a-zA-Z0-9]$', data.content):
+            raise HTTPException(status_code=400, detail="Invalid nameserver (e.g. ns1.example.com)")
 
     await cf_update_record(
         record_id=record["cf_id"],
