@@ -193,6 +193,11 @@ else
     case "$OS" in
         ubuntu|debian)
             $SUDO apt-get install -y -qq python3 python3-pip python3-venv python3-dev > /dev/null 2>&1
+            # Also install version-specific venv package
+            PY_VER_INIT=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+            if [ -n "$PY_VER_INIT" ]; then
+                $SUDO apt-get install -y -qq "python${PY_VER_INIT}-venv" > /dev/null 2>&1
+            fi
             ;;
         centos|rhel|rocky|almalinux)
             $SUDO yum install -y -q python3 python3-pip python3-devel > /dev/null 2>&1
@@ -228,14 +233,25 @@ else
     print_ok "pip $(python3 -m pip --version 2>&1 | awk '{print $2}')"
 fi
 
-# Ensure python3-venv
-if ! python3 -c "import venv" > /dev/null 2>&1; then
-    print_warn "python3-venv not found. Installing..."
+# Ensure python3-venv + ensurepip (test by actually creating a temp venv)
+PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+VENV_TEST_DIR=$(mktemp -d)
+VENV_OK=false
+
+if python3 -m venv "$VENV_TEST_DIR/test_venv" > /dev/null 2>&1; then
+    VENV_OK=true
+fi
+rm -rf "$VENV_TEST_DIR"
+
+if [ "$VENV_OK" = false ]; then
+    print_warn "python3-venv/ensurepip not working. Installing for Python ${PY_VER}..."
     case "$OS" in
         ubuntu|debian)
-            # Get the python version to install the correct venv package
-            PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
             $SUDO apt-get install -y -qq "python${PY_VER}-venv" python3-venv > /dev/null 2>&1
+            # If still missing, try installing ensurepip directly
+            if ! python3 -c "import ensurepip" > /dev/null 2>&1; then
+                $SUDO apt-get install -y -qq "python${PY_VER}-full" > /dev/null 2>&1 || true
+            fi
             ;;
         centos|rhel|rocky|almalinux)
             $SUDO yum install -y -q python3-libs > /dev/null 2>&1 || true
@@ -244,13 +260,17 @@ if ! python3 -c "import venv" > /dev/null 2>&1; then
             $SUDO dnf install -y -q python3-libs > /dev/null 2>&1 || true
             ;;
     esac
-    if python3 -c "import venv" > /dev/null 2>&1; then
-        print_ok "python3-venv installed"
+
+    # Verify again
+    VENV_TEST_DIR2=$(mktemp -d)
+    if python3 -m venv "$VENV_TEST_DIR2/test_venv" > /dev/null 2>&1; then
+        print_ok "python3-venv installed and working"
     else
-        print_warn "python3-venv may not be available. Will try to continue."
+        print_warn "python3-venv still not working. Will try --without-pip fallback in Step 6."
     fi
+    rm -rf "$VENV_TEST_DIR2"
 else
-    print_ok "python3-venv"
+    print_ok "python3-venv (Python ${PY_VER})"
 fi
 
 # ---- Node.js 20.x ----
@@ -612,11 +632,45 @@ cd "$PROJECT_DIR"
 # Create Python virtual environment
 if [ ! -d "backend/venv" ]; then
     print_info "Creating Python virtual environment..."
-    python3 -m venv backend/venv
-    if [ $? -eq 0 ]; then
-        print_ok "Python venv created"
+    if ! python3 -m venv backend/venv > /dev/null 2>&1; then
+        print_warn "venv creation failed. Auto-fixing..."
+
+        # Detect Python version and install the correct venv package
+        PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        print_info "Detected Python ${PY_VER}, installing python${PY_VER}-venv..."
+
+        case "$OS" in
+            ubuntu|debian)
+                $SUDO apt-get update -qq > /dev/null 2>&1
+                $SUDO apt-get install -y -qq "python${PY_VER}-venv" python3-venv > /dev/null 2>&1
+                ;;
+            centos|rhel|rocky|almalinux)
+                $SUDO yum install -y -q python3-libs > /dev/null 2>&1
+                ;;
+            fedora)
+                $SUDO dnf install -y -q python3-libs > /dev/null 2>&1
+                ;;
+        esac
+
+        # Retry venv creation
+        rm -rf backend/venv 2>/dev/null
+        if python3 -m venv backend/venv > /dev/null 2>&1; then
+            print_ok "Python venv created (after auto-fix)"
+        else
+            # Last resort: create venv without pip, then install pip manually
+            print_warn "Trying --without-pip fallback..."
+            rm -rf backend/venv 2>/dev/null
+            python3 -m venv --without-pip backend/venv > /dev/null 2>&1
+            if [ -d "backend/venv" ]; then
+                source backend/venv/bin/activate
+                curl -sS https://bootstrap.pypa.io/get-pip.py | python3 > /dev/null 2>&1
+                print_ok "Python venv created (without-pip fallback)"
+            else
+                fail_exit "Failed to create Python virtual environment. Run manually: sudo apt install python${PY_VER}-venv"
+            fi
+        fi
     else
-        fail_exit "Failed to create Python virtual environment. Ensure python3-venv is installed."
+        print_ok "Python venv created"
     fi
 else
     print_ok "Python venv exists"
