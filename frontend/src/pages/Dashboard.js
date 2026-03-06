@@ -75,10 +75,11 @@ export default function Dashboard() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState(null);
+  const [domains, setDomains] = useState([]);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ record_type: 'A', name: '', content: '', ttl: 1, proxied: false });
+  const [createForm, setCreateForm] = useState({ record_type: 'A', name: '', content: '', domain_id: '', ttl: 1, proxied: false });
   const [createLoading, setCreateLoading] = useState(false);
 
   // Edit dialog
@@ -112,10 +113,23 @@ export default function Dashboard() {
     } catch { /* ignore */ }
   }, [getHeaders]);
 
+  const fetchDomains = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/domains`, { headers: getHeaders() });
+      const activeDomains = res.data.domains || [];
+      setDomains(activeDomains);
+      // Set default domain_id if not set
+      if (activeDomains.length > 0 && !createForm.domain_id) {
+        setCreateForm(prev => ({ ...prev, domain_id: activeDomains[0].id }));
+      }
+    } catch { /* ignore */ }
+  }, [getHeaders]);
+
   useEffect(() => {
     fetchRecords();
     fetchStats();
-  }, [fetchRecords, fetchStats]);
+    fetchDomains();
+  }, [fetchRecords, fetchStats, fetchDomains]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -124,7 +138,7 @@ export default function Dashboard() {
       await axios.post(`${API}/dns/records`, createForm, { headers: getHeaders() });
       toast.success('Record created successfully!');
       setCreateOpen(false);
-      setCreateForm({ record_type: 'A', name: '', content: '', ttl: 1, proxied: false });
+      setCreateForm(prev => ({ record_type: 'A', name: '', content: '', domain_id: prev.domain_id, ttl: 1, proxied: false }));
       fetchRecords();
       fetchStats();
     } catch (err) {
@@ -181,6 +195,9 @@ export default function Dashboard() {
     if (type === 'NS') return t('dashboard.content_placeholder_ns');
     return t('dashboard.content_placeholder_cname');
   };
+
+  const selectedDomain = domains.find(d => d.id === createForm.domain_id);
+  const selectedDomainName = selectedDomain?.name || 'dnslab.biz';
 
   const recordLimit = userStats?.record_limit === -1 ? t('dashboard.stats.unlimited') : userStats?.record_limit ?? 2;
   const canCreate = userStats?.plan !== 'free' || (userStats?.record_count ?? 0) < 2;
@@ -273,7 +290,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
-                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.dnslab.biz</span></span>
+                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.{record.domain_name || 'dnslab.biz'}</span></span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(record)} data-testid={`edit-record-mobile-${record.id}`}>
@@ -319,7 +336,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm">{record.name}</span>
-                          <span className="text-muted-foreground text-xs">.dnslab.biz</span>
+                          <span className="text-muted-foreground text-xs">.{record.domain_name || 'dnslab.biz'}</span>
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm">{record.content}</span>
@@ -372,6 +389,27 @@ export default function Dashboard() {
             <DialogTitle>{t('dashboard.create_title')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
+            {/* Domain Selector */}
+            {domains.length > 1 && (
+              <div className="space-y-2">
+                <Label>{t('dashboard.select_domain')}</Label>
+                <Select
+                  value={createForm.domain_id}
+                  onValueChange={(val) => setCreateForm({ ...createForm, domain_id: val })}
+                >
+                  <SelectTrigger data-testid="create-domain-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {domains.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        <span className="font-mono">{d.name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>{t('dashboard.record_type')}</Label>
               <Select
@@ -401,7 +439,7 @@ export default function Dashboard() {
                   className="bg-background/50"
                   dir="ltr"
                 />
-                <span className="text-sm text-muted-foreground whitespace-nowrap font-mono">.dnslab.biz</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap font-mono">.{selectedDomainName}</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -450,7 +488,7 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground mb-1">{t('dashboard.subdomain')}</p>
                 <p className="font-mono text-sm">
                   <Badge variant="outline" className="me-2 text-[10px]">{editRecord.record_type}</Badge>
-                  {editRecord.name}.dnslab.biz
+                  {editRecord.name}.{editRecord.domain_name || 'dnslab.biz'}
                 </p>
               </div>
             )}
@@ -495,7 +533,7 @@ export default function Dashboard() {
               {t('dashboard.delete_confirm')}
               {deleteRecord && (
                 <span className="block mt-2 font-mono text-xs">
-                  {deleteRecord.name}.dnslab.biz ({deleteRecord.record_type})
+                  {deleteRecord.name}.{deleteRecord.domain_name || 'dnslab.biz'} ({deleteRecord.record_type})
                 </span>
               )}
             </AlertDialogDescription>
