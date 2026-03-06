@@ -21,17 +21,17 @@ Build a beautiful and stylish website for `dnslab.biz` domain. Core functionalit
 - [x] Domain rebranding to dnslab.biz
 - [x] Removed external branding
 - [x] **install.sh** - Fully automated deployment script with auto-install of all prerequisites (P0 - COMPLETED Feb 2026)
+- [x] Duplicate record check against Cloudflare (not just local DB)
+- [x] **Multi-domain support** - Admin can add/remove/toggle domains, users select domain when creating records (COMPLETED Mar 2026)
 
-## install.sh Improvements (Feb 2026)
-- Removed aggressive `set -e`, uses explicit error handling
-- Auto-installs basic tools (curl, wget, git, gnupg, lsb-release, build-essential)
-- Auto-installs Python 3, pip, python3-venv with correct version detection
-- Auto-installs Node.js 20.x with NodeSource + fallback methods
-- Auto-installs Yarn with 3 fallback methods (npm, corepack, apt repo)
-- Auto-installs MongoDB 7.0 with proper codename handling for Ubuntu/Debian
-- Root/sudo detection, OS compatibility checks
-- `DEBIAN_FRONTEND=noninteractive` to prevent interactive prompts
-- 9-step guided installation with clear progress indicators
+## Multi-Domain Architecture (Mar 2026)
+- `domains` collection in MongoDB: { id, name, zone_id, active, created_at }
+- All CF helpers accept zone_id as parameter (not hardcoded)
+- Default domain (dnslab.biz) auto-seeded on startup from CLOUDFLARE_ZONE_ID env var
+- Records store domain_id, domain_name, zone_id for proper routing
+- Admin panel: Tabs (Users | Domains) with full CRUD for domains
+- Dashboard: Domain selector dropdown when 2+ active domains exist
+- Free plan limit: 2 records total across all domains
 
 ## Backlog
 - [ ] **(P1)** Paid subscription system (payment gateway integration)
