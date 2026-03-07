@@ -140,7 +140,7 @@ pkg_update() {
 # ============================================================
 #  STEP 1: Install ALL prerequisites automatically
 # ============================================================
-print_step "1/9 - Installing prerequisites"
+print_step "1/10 - Installing prerequisites"
 
 echo ""
 echo -e "  ${BOLD}Phase 1: Basic system tools${NC}"
@@ -497,7 +497,7 @@ print_ok "All prerequisites installed successfully"
 # ============================================================
 #  STEP 2: Domain & SSL Configuration
 # ============================================================
-print_step "2/9 - Domain & SSL Configuration"
+print_step "2/10 - Domain & SSL Configuration"
 
 echo ""
 echo -e "  ${BOLD}Domain Setup${NC}"
@@ -562,7 +562,7 @@ fi
 # ============================================================
 #  STEP 3: Cloudflare Configuration
 # ============================================================
-print_step "3/9 - Cloudflare Configuration"
+print_step "3/10 - Cloudflare Configuration"
 
 echo ""
 echo -e "  ${BOLD}Get your API Token & Zone ID from: ${NC}https://dash.cloudflare.com"
@@ -581,9 +581,40 @@ while [ -z "$CF_ZONE_ID" ]; do
 done
 
 # ============================================================
+#  STEP 4: Email Verification (SMTP)
+# ============================================================
+print_step "4/10 - Email Verification Setup"
+
+echo ""
+echo -e "  ${BOLD}Email verification prevents fake account registrations.${NC}"
+echo -e "  ${DIM}You need a Gmail account with an App Password (16-character code).${NC}"
+echo ""
+echo -e "  ${BOLD}How to get an App Password:${NC}"
+echo -e "  ${DIM}1. Go to https://myaccount.google.com/security${NC}"
+echo -e "  ${DIM}2. Enable 2-Step Verification (if not already)${NC}"
+echo -e "  ${DIM}3. Go to https://myaccount.google.com/apppasswords${NC}"
+echo -e "  ${DIM}4. Create a new App Password (e.g. name it 'DNSLAB')${NC}"
+echo -e "  ${DIM}5. Copy the 16-character password${NC}"
+echo ""
+
+read -p "  Gmail address for sending verification emails: " SMTP_EMAIL
+while [[ ! "$SMTP_EMAIL" == *@gmail.com ]]; do
+    print_err "Must be a @gmail.com address"
+    read -p "  Gmail address: " SMTP_EMAIL
+done
+
+read -p "  Gmail App Password (16 characters, e.g. abcd efgh ijkl mnop): " SMTP_PASSWORD
+while [ -z "$SMTP_PASSWORD" ]; do
+    print_err "Required"
+    read -p "  Gmail App Password: " SMTP_PASSWORD
+done
+
+print_ok "Email verification: ${SMTP_EMAIL}"
+
+# ============================================================
 #  STEP 4: Database Configuration
 # ============================================================
-print_step "4/9 - Database Configuration"
+print_step "5/10 - Database Configuration"
 
 echo ""
 read -p "  MongoDB URL [mongodb://localhost:27017]: " MONGO_URL
@@ -597,7 +628,7 @@ print_ok "Database: ${DB_NAME} at ${MONGO_URL}"
 # ============================================================
 #  STEP 5: Admin Account
 # ============================================================
-print_step "5/9 - Admin Account"
+print_step "6/10 - Admin Account"
 
 echo ""
 echo -e "  ${DIM}Only @gmail.com addresses are allowed.${NC}"
@@ -622,7 +653,7 @@ JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/nu
 # ============================================================
 #  STEP 6: Install Application Dependencies
 # ============================================================
-print_step "6/9 - Installing Application Dependencies"
+print_step "7/10 - Installing Application Dependencies"
 
 echo ""
 echo -e "  ${BOLD}Backend setup...${NC}"
@@ -711,7 +742,7 @@ cd "$PROJECT_DIR"
 # ============================================================
 #  STEP 7: Configure Environment
 # ============================================================
-print_step "7/9 - Configuring Environment"
+print_step "8/10 - Configuring Environment"
 
 # Backend .env
 cat > "$PROJECT_DIR/backend/.env" << ENVEOF
@@ -722,6 +753,8 @@ CLOUDFLARE_API_TOKEN=${CF_TOKEN}
 CLOUDFLARE_ZONE_ID=${CF_ZONE_ID}
 JWT_SECRET=${JWT_SECRET}
 ADMIN_EMAIL=${ADMIN_EMAIL}
+SMTP_EMAIL=${SMTP_EMAIL}
+SMTP_PASSWORD=${SMTP_PASSWORD}
 ENVEOF
 print_ok "backend/.env configured"
 
@@ -746,7 +779,7 @@ cd "$PROJECT_DIR"
 # ============================================================
 #  STEP 8: Setup Services
 # ============================================================
-print_step "8/9 - Setting up Services"
+print_step "9/10 - Setting up Services"
 
 PYTHON_PATH="$PROJECT_DIR/backend/venv/bin/python"
 
@@ -893,7 +926,7 @@ fi
 # ============================================================
 #  STEP 9: Setup Admin Account
 # ============================================================
-print_step "9/9 - Creating Admin Account"
+print_step "10/10 - Creating Admin Account"
 
 API_BASE="http://127.0.0.1:${BACKEND_PORT}/api"
 

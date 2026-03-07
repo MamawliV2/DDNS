@@ -17,9 +17,11 @@
 ## Features
 
 - **Free DNS Records** - Create up to 2 A, AAAA, CNAME, or NS records for free
+- **Multi-Domain Support** - Admin can add multiple domains, users choose which domain to use
 - **Real Cloudflare DNS** - Records are created on Cloudflare's global infrastructure
+- **Email Verification** - 6-digit verification code sent to Gmail before account activation
 - **User Dashboard** - Clean, modern dashboard for managing all DNS records
-- **Admin Panel** - Full user management, plan control, and platform statistics
+- **Admin Panel** - Full user management, domain management, and platform statistics
 - **Bilingual** - Full support for English and Persian (Farsi) with RTL layout
 - **Dark/Light Mode** - Toggle between dark and light themes
 - **Mobile Responsive** - Fully responsive design with mobile card views
@@ -51,15 +53,17 @@ The install script will:
 1. Check and install all prerequisites (Python 3, Node.js, MongoDB, nginx, certbot)
 2. Ask if you want to use a custom domain (+ SSL with Let's Encrypt)
 3. Ask for your Cloudflare API Token and Zone ID
-4. Ask for admin email and password
-5. Install all dependencies
-6. Configure environment variables
-7. Build the frontend for production
-8. Setup systemd service for backend
-9. Configure nginx as reverse proxy (if using domain)
-10. Obtain SSL certificate with certbot (if using domain)
-11. Create and promote the admin account
-12. Display access URLs including admin panel link
+4. Ask for email verification credentials (Gmail + App Password)
+5. Ask for database configuration
+6. Ask for admin email and password
+7. Install all dependencies
+8. Configure environment variables
+9. Build the frontend for production
+10. Setup systemd service for backend
+11. Configure nginx as reverse proxy (if using domain)
+12. Obtain SSL certificate with certbot (if using domain)
+13. Create and promote the admin account
+14. Display access URLs including admin panel link
 
 ### Manual Installation
 
@@ -95,6 +99,8 @@ CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
 CLOUDFLARE_ZONE_ID=your_cloudflare_zone_id
 JWT_SECRET=your_random_jwt_secret
 ADMIN_EMAIL=your_admin@gmail.com
+SMTP_EMAIL=your_gmail@gmail.com
+SMTP_PASSWORD=your_16_char_app_password
 ```
 
 Start the backend:
@@ -146,13 +152,54 @@ curl -X POST http://localhost:8001/api/admin/setup
 3. On the Overview page, find **Zone ID** on the right sidebar
 4. Copy the Zone ID
 
+## Setting Up Email Verification
+
+Email verification requires a Gmail account with an **App Password**. This is used to send 6-digit verification codes to users when they register.
+
+### Step 1: Enable 2-Step Verification
+
+1. Go to [Google Security Settings](https://myaccount.google.com/security)
+2. Find **2-Step Verification** and enable it (if not already enabled)
+3. Follow the prompts to set up 2-Step Verification
+
+### Step 2: Create an App Password
+
+1. Go to [Google App Passwords](https://myaccount.google.com/apppasswords)
+2. Enter a name for the app (e.g., `DNSLAB`)
+3. Click **Create**
+4. Google will show you a **16-character password** (e.g., `abcd efgh ijkl mnop`)
+5. **Copy this password** - you'll need it for the installation
+
+### Step 3: Configure
+
+If using the automated install script, it will ask for:
+- **Gmail address**: The Gmail you used to create the App Password
+- **App Password**: The 16-character code from Step 2
+
+If installing manually, add these to `backend/.env`:
+```env
+SMTP_EMAIL=your_gmail@gmail.com
+SMTP_PASSWORD=abcd efgh ijkl mnop
+```
+
+### How It Works
+
+1. User registers with a Gmail address
+2. A 6-digit verification code is sent to their email
+3. User enters the code on the verification page
+4. Once verified, they can log in and use the dashboard
+5. Verification codes expire after 10 minutes
+6. Users can request a new code if the old one expires
+
 ## API Endpoints
 
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register (Gmail only) |
-| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/register` | Register (Gmail only) - sends verification code |
+| POST | `/api/auth/verify` | Verify email with 6-digit code |
+| POST | `/api/auth/resend-code` | Resend verification code |
+| POST | `/api/auth/login` | Login (verified users only) |
 | GET | `/api/auth/me` | Get current user info |
 
 ### DNS Records
@@ -162,6 +209,7 @@ curl -X POST http://localhost:8001/api/admin/setup
 | POST | `/api/dns/records` | Create DNS record |
 | PUT | `/api/dns/records/:id` | Update DNS record |
 | DELETE | `/api/dns/records/:id` | Delete DNS record |
+| GET | `/api/domains` | List active domains |
 
 ### Admin
 | Method | Endpoint | Description |
@@ -170,6 +218,10 @@ curl -X POST http://localhost:8001/api/admin/setup
 | GET | `/api/admin/users` | List all users |
 | PUT | `/api/admin/users/:id/plan` | Change user plan |
 | DELETE | `/api/admin/users/:id` | Delete user |
+| GET | `/api/admin/domains` | List all domains |
+| POST | `/api/admin/domains` | Add domain |
+| PUT | `/api/admin/domains/:id` | Update domain (toggle active) |
+| DELETE | `/api/admin/domains/:id` | Delete domain |
 | POST | `/api/admin/setup` | Promote admin user |
 
 ## Project Structure
@@ -197,6 +249,7 @@ dnslab-biz/
 │   │   │   ├── Landing.js   # Homepage
 │   │   │   ├── Login.js     # Login page
 │   │   │   ├── Register.js  # Registration page
+│   │   │   ├── VerifyEmail.js # Email verification page
 │   │   │   ├── Dashboard.js # DNS management
 │   │   │   └── Admin.js     # Admin panel
 │   │   ├── translations/
@@ -232,6 +285,8 @@ dnslab-biz/
 | `CLOUDFLARE_ZONE_ID` | Cloudflare zone ID | Yes |
 | `JWT_SECRET` | JWT signing secret | Yes |
 | `ADMIN_EMAIL` | Admin user email | Yes |
+| `SMTP_EMAIL` | Gmail address for sending verification emails | Yes |
+| `SMTP_PASSWORD` | Gmail App Password (16 characters) | Yes |
 | `CORS_ORIGINS` | Allowed CORS origins | No (default: *) |
 
 ### Frontend (`frontend/.env`)
