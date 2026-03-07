@@ -23,6 +23,7 @@ Build a beautiful and stylish website for `dnslab.biz` domain. Core functionalit
 - [x] **install.sh** - Fully automated deployment script with auto-install of all prerequisites (P0 - COMPLETED Feb 2026)
 - [x] Duplicate record check against Cloudflare (not just local DB)
 - [x] **Multi-domain support** - Admin can add/remove/toggle domains, users select domain when creating records (COMPLETED Mar 2026)
+- [x] **Email Verification** - 6-digit code sent via Gmail SMTP, unverified users blocked from login (COMPLETED Mar 2026)
 
 ## Multi-Domain Architecture (Mar 2026)
 - `domains` collection in MongoDB: { id, name, zone_id, active, created_at }
