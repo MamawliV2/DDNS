@@ -44,9 +44,20 @@ export function AuthProvider({ children }) {
 
   const register = async (email, password) => {
     const res = await axios.post(`${API}/auth/register`, { email, password });
+    // Registration now returns verification status, not a token
+    return res.data;
+  };
+
+  const verifyEmail = async (email, code) => {
+    const res = await axios.post(`${API}/auth/verify`, { email, code });
     localStorage.setItem('ddns-token', res.data.token);
     setToken(res.data.token);
     setUser(res.data.user);
+    return res.data;
+  };
+
+  const resendCode = async (email) => {
+    const res = await axios.post(`${API}/auth/resend-code`, { email });
     return res.data;
   };
 
@@ -59,7 +70,7 @@ export function AuthProvider({ children }) {
   const refreshUser = () => fetchUser();
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, verifyEmail, resendCode, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

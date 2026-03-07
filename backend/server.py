@@ -13,6 +13,10 @@ import jwt
 import bcrypt
 import httpx
 import re
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -41,6 +45,13 @@ JWT_EXPIRY_DAYS = 7
 
 # App config
 FREE_RECORD_LIMIT = 2
+
+# SMTP config
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+
+# Verification code expiry (minutes)
+VERIFY_CODE_EXPIRY = 10
 
 app = FastAPI(title="DNSLAB.BIZ API")
 api_router = APIRouter(prefix="/api")
@@ -117,6 +128,52 @@ def create_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def generate_verification_code():
+    return str(random.randint(100000, 999999))
+
+
+def send_verification_email(to_email: str, code: str):
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        logger.error("SMTP not configured")
+        return False
+
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #1e293b; margin: 0;">DNSLAB.BIZ</h2>
+            <p style="color: #64748b; font-size: 14px;">Email Verification</p>
+        </div>
+        <div style="background: white; padding: 24px; border-radius: 8px; text-align: center;">
+            <p style="color: #334155; font-size: 15px; margin-bottom: 20px;">Your verification code is:</p>
+            <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #2563eb; padding: 16px; background: #eff6ff; border-radius: 8px; font-family: monospace;">
+                {code}
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">This code expires in {VERIFY_CODE_EXPIRY} minutes.</p>
+        </div>
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 16px;">
+            If you didn't request this, please ignore this email.
+        </p>
+    </div>
+    """
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"DNSLAB.BIZ - Verification Code: {code}"
+    msg["From"] = f"DNSLAB.BIZ <{SMTP_EMAIL}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(f"Your verification code is: {code}\nExpires in {VERIFY_CODE_EXPIRY} minutes.", "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        logger.info(f"Verification email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {e}")
+        return False
+
+
 async def get_current_user(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -170,6 +227,15 @@ class DomainUpdate(BaseModel):
     zone_id: Optional[str] = None
 
 
+class VerifyCode(BaseModel):
+    email: str
+    code: str
+
+
+class ResendCode(BaseModel):
+    email: str
+
+
 # --- Helper: get domain by id ---
 async def get_domain(domain_id: str):
     domain = await db.domains.find_one({"id": domain_id}, {"_id": 0})
@@ -189,23 +255,93 @@ async def register(data: UserRegister):
 
     existing = await db.users.find_one({"email": data.email})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        if existing.get("verified", False):
+            raise HTTPException(status_code=400, detail="Email already registered")
+        else:
+            # Unverified user: update password and resend code
+            code = generate_verification_code()
+            await db.users.update_one(
+                {"email": data.email},
+                {"$set": {
+                    "password_hash": hash_password(data.password),
+                    "verification_code": code,
+                    "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat()
+                }}
+            )
+            send_verification_email(data.email, code)
+            return {"message": "Verification code sent", "email": data.email, "verified": False}
 
     user_id = str(uuid.uuid4())
+    code = generate_verification_code()
     user_doc = {
         "id": user_id,
         "email": data.email,
         "password_hash": hash_password(data.password),
         "plan": "free",
+        "verified": False,
+        "verification_code": code,
+        "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
 
-    token = create_token(user_id, data.email)
+    send_verification_email(data.email, code)
+    return {"message": "Verification code sent", "email": data.email, "verified": False}
+
+
+@api_router.post("/auth/verify")
+async def verify_email(data: VerifyCode):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.get("verified", False):
+        raise HTTPException(status_code=400, detail="Email already verified")
+
+    if user.get("verification_code") != data.code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+
+    expires = user.get("code_expires_at", "")
+    if expires:
+        exp_dt = datetime.fromisoformat(expires)
+        if datetime.now(timezone.utc) > exp_dt:
+            raise HTTPException(status_code=400, detail="Verification code expired. Request a new one.")
+
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"verified": True}, "$unset": {"verification_code": "", "code_expires_at": ""}}
+    )
+
+    token = create_token(user["id"], user["email"])
     return {
         "token": token,
-        "user": {"id": user_id, "email": data.email, "plan": "free", "role": "user"}
+        "user": {"id": user["id"], "email": user["email"], "plan": user.get("plan", "free"), "role": user.get("role", "user")}
     }
+
+
+@api_router.post("/auth/resend-code")
+async def resend_code(data: ResendCode):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.get("verified", False):
+        raise HTTPException(status_code=400, detail="Email already verified")
+
+    code = generate_verification_code()
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {
+            "verification_code": code,
+            "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat()
+        }}
+    )
+
+    sent = send_verification_email(data.email, code)
+    if not sent:
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+
+    return {"message": "Verification code sent"}
 
 
 @api_router.post("/auth/login")
@@ -213,6 +349,19 @@ async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.get("verified", False):
+        # Resend verification code
+        code = generate_verification_code()
+        await db.users.update_one(
+            {"email": data.email},
+            {"$set": {
+                "verification_code": code,
+                "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat()
+            }}
+        )
+        send_verification_email(data.email, code)
+        raise HTTPException(status_code=403, detail="Email not verified. A new verification code has been sent.")
 
     token = create_token(user["id"], user["email"])
     return {

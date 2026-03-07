@@ -26,8 +26,14 @@ export default function Login() {
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err) {
+      const status = err.response?.status;
       const msg = err.response?.data?.detail || 'Login failed. Please try again.';
-      toast.error(msg);
+      if (status === 403 && msg.includes('not verified')) {
+        toast.info(msg);
+        navigate('/verify-email', { state: { email } });
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }

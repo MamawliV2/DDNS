@@ -36,8 +36,8 @@ export default function Register() {
     setLoading(true);
     try {
       await register(email, password);
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      toast.success(t('auth.verify_code_sent'));
+      navigate('/verify-email', { state: { email } });
     } catch (err) {
       const msg = err.response?.data?.detail || 'Registration failed. Please try again.';
       toast.error(msg);
