@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, BackgroundTasks
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -246,7 +246,7 @@ async def get_domain(domain_id: str):
 
 # --- Auth Routes ---
 @api_router.post("/auth/register")
-async def register(data: UserRegister):
+async def register(data: UserRegister, background_tasks: BackgroundTasks):
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', data.email):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
@@ -258,7 +258,6 @@ async def register(data: UserRegister):
         if existing.get("verified", False):
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
-            # Unverified user: update password and resend code
             code = generate_verification_code()
             await db.users.update_one(
                 {"email": data.email},
@@ -268,7 +267,7 @@ async def register(data: UserRegister):
                     "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat()
                 }}
             )
-            send_verification_email(data.email, code)
+            background_tasks.add_task(send_verification_email, data.email, code)
             return {"message": "Verification code sent", "email": data.email, "verified": False}
 
     user_id = str(uuid.uuid4())
@@ -285,7 +284,7 @@ async def register(data: UserRegister):
     }
     await db.users.insert_one(user_doc)
 
-    send_verification_email(data.email, code)
+    background_tasks.add_task(send_verification_email, data.email, code)
     return {"message": "Verification code sent", "email": data.email, "verified": False}
 
 
@@ -320,7 +319,7 @@ async def verify_email(data: VerifyCode):
 
 
 @api_router.post("/auth/resend-code")
-async def resend_code(data: ResendCode):
+async def resend_code(data: ResendCode, background_tasks: BackgroundTasks):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -337,21 +336,17 @@ async def resend_code(data: ResendCode):
         }}
     )
 
-    sent = send_verification_email(data.email, code)
-    if not sent:
-        raise HTTPException(status_code=500, detail="Failed to send verification email")
-
+    background_tasks.add_task(send_verification_email, data.email, code)
     return {"message": "Verification code sent"}
 
 
 @api_router.post("/auth/login")
-async def login(data: UserLogin):
+async def login(data: UserLogin, background_tasks: BackgroundTasks):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.get("verified", False):
-        # Resend verification code
         code = generate_verification_code()
         await db.users.update_one(
             {"email": data.email},
@@ -360,7 +355,7 @@ async def login(data: UserLogin):
                 "code_expires_at": (datetime.now(timezone.utc) + timedelta(minutes=VERIFY_CODE_EXPIRY)).isoformat()
             }}
         )
-        send_verification_email(data.email, code)
+        background_tasks.add_task(send_verification_email, data.email, code)
         raise HTTPException(status_code=403, detail="Email not verified. A new verification code has been sent.")
 
     token = create_token(user["id"], user["email"])
