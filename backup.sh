@@ -13,12 +13,22 @@ NC='\033[0m'
 BOLD='\033[1m'
 DIM='\033[2m'
 
-# Telegram config
-BOT_TOKEN="8430261121:AAGWHza5uWFk94fq36DwFcAN-xQrfybswKQ"
-CHAT_ID="865122337"
-
-# Database config (same as backend/.env)
+# Telegram config (read from backend/.env)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/backend/.env" ]; then
+    BOT_TOKEN=$(grep '^TELEGRAM_BOT_TOKEN' "$SCRIPT_DIR/backend/.env" | cut -d'=' -f2- | tr -d '"')
+    CHAT_ID=$(grep '^TELEGRAM_CHAT_ID' "$SCRIPT_DIR/backend/.env" | cut -d'=' -f2- | tr -d '"')
+fi
+
+if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+    echo -e "${RED}[ERROR]${NC} TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID not found in backend/.env"
+    echo -e "${DIM}  Add these lines to backend/.env:${NC}"
+    echo -e "${DIM}  TELEGRAM_BOT_TOKEN=your_bot_token${NC}"
+    echo -e "${DIM}  TELEGRAM_CHAT_ID=your_chat_id${NC}"
+    exit 1
+fi
+
+# Database config (from backend/.env)
 if [ -f "$SCRIPT_DIR/backend/.env" ]; then
     MONGO_URL=$(grep '^MONGO_URL' "$SCRIPT_DIR/backend/.env" | cut -d'=' -f2- | tr -d '"')
     DB_NAME=$(grep '^DB_NAME' "$SCRIPT_DIR/backend/.env" | cut -d'=' -f2- | tr -d '"')
