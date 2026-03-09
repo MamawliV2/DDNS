@@ -313,7 +313,7 @@ The project includes an automated backup system that saves your MongoDB database
 
 2. **Get Your Chat ID:**
    - Message `@userinfobot` on Telegram
-   - Copy your **Chat ID** (e.g., `865122337`)
+   - Copy your **Chat ID** (e.g., `123456789`)
 
 3. **Start the Bot:**
    - Open your bot in Telegram and press **Start** (required!)
