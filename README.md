@@ -259,6 +259,7 @@ dnslab-biz/
 │   ├── package.json
 │   └── .env               # Frontend environment variables
 ├── install.sh              # Automated install script
+├── backup.sh               # Backup & restore script
 └── README.md
 ```
 
@@ -287,6 +288,8 @@ dnslab-biz/
 | `ADMIN_EMAIL` | Admin user email | Yes |
 | `SMTP_EMAIL` | Gmail address for sending verification emails | Yes |
 | `SMTP_PASSWORD` | Gmail App Password (16 characters) | Yes |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (for backups) | No |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID (for backups) | No |
 | `CORS_ORIGINS` | Allowed CORS origins | No (default: *) |
 
 ### Frontend (`frontend/.env`)
@@ -294,6 +297,118 @@ dnslab-biz/
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `REACT_APP_BACKEND_URL` | Backend API URL | Yes |
+
+## Backup & Restore
+
+The project includes an automated backup system that saves your MongoDB database and sends it to your Telegram account.
+
+### Prerequisites
+
+1. **Create a Telegram Bot:**
+   - Open Telegram and message `@BotFather`
+   - Send `/newbot` and follow the instructions
+   - Copy the **Bot Token** (e.g., `123456:ABC-DEF...`)
+
+2. **Get Your Chat ID:**
+   - Message `@userinfobot` on Telegram
+   - Copy your **Chat ID** (e.g., `865122337`)
+
+3. **Start the Bot:**
+   - Open your bot in Telegram and press **Start** (required!)
+
+4. **Add to Environment:**
+   ```bash
+   echo 'TELEGRAM_BOT_TOKEN=your_bot_token' >> backend/.env
+   echo 'TELEGRAM_CHAT_ID=your_chat_id' >> backend/.env
+   ```
+
+### Manual Backup
+
+Take a backup and send it to Telegram:
+
+```bash
+cd ~/DDNS
+bash backup.sh backup
+```
+
+Output:
+```
+  DNSLAB.BIZ - Database Backup
+
+  [OK] Backup created: backups/ddns_land_2026-03-09_03-00-00.tar.gz (12K)
+  [OK] Sent to Telegram
+  [OK] Cleanup: keeping last 7 backups
+  [OK] Backup complete!
+```
+
+You'll receive a file in Telegram with details like:
+```
+✅ DNSLAB Backup
+📅 2026-03-09 03:00
+📦 Size: 12K
+👥 Users: 25
+📋 Records: 48
+🌐 Domains: 3
+```
+
+### Automatic Daily Backup
+
+Set up a cron job to backup every day at 3:00 AM:
+
+```bash
+bash backup.sh cron
+```
+
+### Restore from Backup
+
+**On the same server (restore a previous backup):**
+
+```bash
+bash backup.sh restore
+```
+
+Then:
+1. A list of available backups is shown
+2. Select the backup number
+3. Confirm with `y`
+4. Restart: `sudo systemctl restart ddns-backend`
+
+**On a new/clean server (migrate):**
+
+```bash
+# 1. Install the project on the new server
+git clone https://github.com/MamawliV2/DDNS.git
+cd DDNS
+sudo bash install.sh
+
+# 2. Download the backup file from Telegram and copy to server
+mkdir -p backups
+scp user@your-pc:~/Downloads/ddns_land_2026-03-09.tar.gz ~/DDNS/backups/
+
+# 3. Restore
+bash backup.sh restore
+
+# 4. Restart backend
+sudo systemctl restart ddns-backend
+```
+
+### Restore from a Specific File
+
+```bash
+bash backup.sh restore /path/to/backup_file.tar.gz
+```
+
+### All Backup Commands
+
+| Command | Description |
+|---------|-------------|
+| `bash backup.sh backup` | Backup now + send to Telegram |
+| `bash backup.sh restore` | Restore from available backups |
+| `bash backup.sh restore file.tar.gz` | Restore from specific file |
+| `bash backup.sh cron` | Setup daily auto-backup (3 AM) |
+| `bash backup.sh auto` | Silent backup (used by cron) |
+
+> **Note:** Local backups are stored in the `backups/` folder. Only the last 7 backups are kept to save disk space.
 
 ## Security Notes
 
