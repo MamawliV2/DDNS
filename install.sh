@@ -612,6 +612,43 @@ done
 print_ok "Email verification: ${SMTP_EMAIL}"
 
 # ============================================================
+#  STEP 4b: Telegram Backup (Optional)
+# ============================================================
+echo ""
+echo -e "  ${BOLD}Telegram Backup (Optional)${NC}"
+echo -e "  ${DIM}Send automatic database backups to your Telegram.${NC}"
+echo ""
+
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID=""
+
+read -p "  Setup Telegram backup? (y/N): " SETUP_TG
+if [[ "$SETUP_TG" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo -e "  ${DIM}1. Message @BotFather on Telegram, send /newbot${NC}"
+    echo -e "  ${DIM}2. Copy the Bot Token${NC}"
+    echo -e "  ${DIM}3. Message @userinfobot to get your Chat ID${NC}"
+    echo -e "  ${DIM}4. Open your bot and press Start${NC}"
+    echo ""
+
+    read -p "  Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+    while [ -z "$TELEGRAM_BOT_TOKEN" ]; do
+        print_err "Required"
+        read -p "  Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+    done
+
+    read -p "  Telegram Chat ID: " TELEGRAM_CHAT_ID
+    while [ -z "$TELEGRAM_CHAT_ID" ]; do
+        print_err "Required"
+        read -p "  Telegram Chat ID: " TELEGRAM_CHAT_ID
+    done
+
+    print_ok "Telegram backup configured"
+else
+    print_info "Skipped. You can set it up later in backend/.env"
+fi
+
+# ============================================================
 #  STEP 4: Database Configuration
 # ============================================================
 print_step "5/10 - Database Configuration"
@@ -755,6 +792,8 @@ JWT_SECRET=${JWT_SECRET}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 SMTP_EMAIL=${SMTP_EMAIL}
 SMTP_PASSWORD=${SMTP_PASSWORD}
+TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
 ENVEOF
 print_ok "backend/.env configured"
 
@@ -1002,6 +1041,23 @@ echo -e "    sudo journalctl -u ddns-backend -f      ${DIM}# View logs${NC}"
 if [ "$USE_SSL" = true ]; then
     echo -e "    sudo systemctl restart nginx            ${DIM}# Restart nginx${NC}"
     echo -e "    sudo certbot renew --dry-run            ${DIM}# Test SSL renewal${NC}"
+fi
+
+# Setup backup if Telegram was configured
+if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+    chmod +x "$PROJECT_DIR/backup.sh"
+    echo ""
+    echo -e "  ${BOLD}Backup Commands:${NC}"
+    echo -e "    bash backup.sh backup                   ${DIM}# Backup now${NC}"
+    echo -e "    bash backup.sh restore                  ${DIM}# Restore from backup${NC}"
+    echo -e "    bash backup.sh cron                     ${DIM}# Setup daily auto-backup${NC}"
+
+    read -p "  Enable daily auto-backup at 3:00 AM? (Y/n): " SETUP_CRON
+    if [[ ! "$SETUP_CRON" =~ ^[Nn]$ ]]; then
+        CRON_CMD="0 3 * * * cd $PROJECT_DIR && bash backup.sh auto"
+        (crontab -l 2>/dev/null | grep -v "backup.sh"; echo "$CRON_CMD") | crontab -
+        print_ok "Daily auto-backup enabled (3:00 AM)"
+    fi
 fi
 
 echo ""
