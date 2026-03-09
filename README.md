@@ -1,5 +1,7 @@
 # DNSLAB.BIZ - Free Dynamic DNS Service
 
+> **[فارسی (Persian)](README.fa.md)**
+
 <div align="center">
   <img src="frontend/public/logo.svg" alt="DNSLAB.BIZ Logo" width="120" />
   <h3>Free Dynamic DNS Management Platform</h3>
