@@ -200,7 +200,7 @@ export default function Dashboard() {
   const selectedDomainName = selectedDomain?.name || 'dnslab.biz';
 
   const recordLimit = userStats?.record_limit === -1 ? t('dashboard.stats.unlimited') : userStats?.record_limit ?? 2;
-  const canCreate = userStats?.plan !== 'free' || (userStats?.record_count ?? 0) < 2;
+  const canCreate = userStats?.record_limit === -1 || (userStats?.record_count ?? 0) < (userStats?.record_limit ?? 2);
 
   return (
     <div className="min-h-screen bg-background" data-testid="dashboard-page">
