@@ -1,48 +1,59 @@
+<div dir="rtl">
+
 # DNSLAB.BIZ - سرویس رایگان DNS داینامیک
 
 > **[English](README.md)**
 
 <div align="center">
   <img src="frontend/public/logo.svg" alt="DNSLAB.BIZ Logo" width="120" />
-  <h3>پلتفرم مدیریت DNS داینامیک رایگان</h3>
-  <p>ساخت رایگان ساب‌دامین DNS روی <strong>dnslab.biz</strong> با زیرساخت واقعی Cloudflare</p>
-  
-  ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
-  ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
-  ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
-  ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
-  ![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+
+**پلتفرم مدیریت DNS داینامیک رایگان**
+
+ساخت رایگان ساب دامین DNS روی **dnslab.biz** با زیرساخت واقعی Cloudflare
+
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+
 </div>
 
 ---
 
 ## امکانات
 
-- **رکوردهای DNS رایگان** - ساخت تا ۲ رکورد A، AAAA، CNAME یا NS به صورت رایگان
-- **پشتیبانی چند دامنه** - ادمین می‌تونه چندین دامنه اضافه کنه و کاربران دامنه مورد نظر رو انتخاب کنن
-- **DNS واقعی Cloudflare** - رکوردها روی زیرساخت جهانی Cloudflare ساخته می‌شن
-- **تایید ایمیل** - ارسال کد تایید ۶ رقمی به Gmail قبل از فعال‌سازی حساب
-- **داشبورد کاربر** - داشبورد مدرن و تمیز برای مدیریت رکوردهای DNS
-- **پنل مدیریت** - مدیریت کاربران، مدیریت دامنه‌ها و آمار پلتفرم
-- **دو زبانه** - پشتیبانی کامل از فارسی (RTL) و انگلیسی
-- **حالت تاریک/روشن** - تغییر بین تم تاریک و روشن
-- **واکنش‌گرا** - طراحی کاملاً واکنش‌گرا برای موبایل
-- **فقط Gmail** - ثبت‌نام فقط با آدرس‌های @gmail.com
-- **پلن‌های ویژه** - ارتقا به رکوردهای نامحدود از طریق تلگرام
+- رکوردهای DNS رایگان - ساخت تا 2 رکورد A, AAAA, CNAME یا NS به صورت رایگان
+- پشتیبانی چند دامنه - ادمین میتونه چندین دامنه اضافه کنه و کاربران دامنه مورد نظر رو انتخاب کنن
+- DNS واقعی Cloudflare - رکوردها روی زیرساخت جهانی Cloudflare ساخته میشن
+- تایید ایمیل - ارسال کد تایید 6 رقمی به Gmail قبل از فعال سازی حساب
+- داشبورد کاربر - داشبورد مدرن و تمیز برای مدیریت رکوردهای DNS
+- پنل مدیریت - مدیریت کاربران و دامنه ها و آمار پلتفرم
+- دو زبانه - پشتیبانی کامل از فارسی و انگلیسی
+- حالت تاریک و روشن - تغییر بین تم تاریک و روشن
+- واکنش گرا - طراحی کاملا واکنش گرا برای موبایل
+- فقط Gmail - ثبت نام فقط با آدرس های gmail.com
+- پلن های ویژه - ارتقا به رکوردهای نامحدود از طریق تلگرام
 
-## فناوری‌ها
+## فناوری ها
 
-| بخش | فناوری |
-|-----|--------|
-| فرانت‌اند | React 18, Tailwind CSS, Shadcn/UI |
-| بک‌اند | Python FastAPI |
-| دیتابیس | MongoDB |
+<div dir="ltr">
+
+| Component | Technology |
+|-----------|-----------|
+| Frontend | React 18, Tailwind CSS, Shadcn/UI |
+| Backend | Python FastAPI |
+| Database | MongoDB |
 | DNS | Cloudflare API |
-| احراز هویت | JWT (JSON Web Tokens) |
+| Auth | JWT (JSON Web Tokens) |
+
+</div>
 
 ## شروع سریع
 
 ### نصب خودکار
+
+<div dir="ltr">
 
 ```bash
 git clone https://github.com/MamawliV2/DDNS.git
@@ -51,39 +62,48 @@ chmod +x install.sh
 ./install.sh
 ```
 
-اسکریپت نصب:
-1. بررسی و نصب تمام پیش‌نیازها (Python 3, Node.js, MongoDB, nginx, certbot)
-2. پیکربندی دامنه و SSL (با Let's Encrypt)
+</div>
+
+اسکریپت نصب این کارها رو انجام میده:
+
+1. بررسی و نصب تمام پیش نیازها (Python 3, Node.js, MongoDB, nginx, certbot)
+2. پیکربندی دامنه و SSL با Let's Encrypt
 3. دریافت API Token و Zone ID کلادفلر
-4. دریافت اطلاعات تایید ایمیل (Gmail + App Password)
+4. دریافت اطلاعات تایید ایمیل (Gmail و App Password)
 5. پیکربندی دیتابیس
 6. دریافت ایمیل و رمز ادمین
-7. نصب وابستگی‌ها
+7. نصب وابستگی ها
 8. تنظیم متغیرهای محیطی
-9. بیلد فرانت‌اند
-10. راه‌اندازی سرویس systemd
-11. پیکربندی nginx (در صورت استفاده از دامنه)
-12. دریافت گواهی SSL (در صورت استفاده از دامنه)
+9. بیلد فرانت اند
+10. راه اندازی سرویس systemd
+11. پیکربندی nginx در صورت استفاده از دامنه
+12. دریافت گواهی SSL در صورت استفاده از دامنه
 13. ساخت و ارتقای حساب ادمین
-14. نمایش آدرس‌های دسترسی
+14. نمایش آدرس های دسترسی
 
 ### نصب دستی
 
-#### پیش‌نیازها
+#### پیش نیازها
 
-- Python 3.8+
-- Node.js 16+ و Yarn
-- MongoDB 4.4+
+- Python 3.8 به بالا
+- Node.js 16 به بالا و Yarn
+- MongoDB 4.4 به بالا
 - حساب Cloudflare با یک دامنه
 
-#### ۱. کلون ریپوزیتوری
+#### 1. کلون ریپوزیتوری
+
+<div dir="ltr">
 
 ```bash
 git clone https://github.com/MamawliV2/DDNS.git
 cd DDNS
 ```
 
-#### ۲. راه‌اندازی بک‌اند
+</div>
+
+#### 2. راه اندازی بک اند
+
+<div dir="ltr">
 
 ```bash
 cd backend
@@ -92,346 +112,408 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+</div>
+
 فایل `backend/.env` بسازید:
+
+<div dir="ltr">
+
 ```env
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=ddns_land
 CORS_ORIGINS=*
-CLOUDFLARE_API_TOKEN=توکن_API_کلادفلر
-CLOUDFLARE_ZONE_ID=شناسه_زون_کلادفلر
-JWT_SECRET=یک_رشته_تصادفی
-ADMIN_EMAIL=ایمیل_ادمین@gmail.com
-SMTP_EMAIL=ایمیل_جیمیل@gmail.com
-SMTP_PASSWORD=رمز_۱۶_کاراکتری_اپلیکیشن
+CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+CLOUDFLARE_ZONE_ID=your_cloudflare_zone_id
+JWT_SECRET=your_random_jwt_secret
+ADMIN_EMAIL=your_admin@gmail.com
+SMTP_EMAIL=your_gmail@gmail.com
+SMTP_PASSWORD=your_16_char_app_password
 ```
 
-اجرای بک‌اند:
+</div>
+
+اجرای بک اند:
+
+<div dir="ltr">
+
 ```bash
 uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-#### ۳. راه‌اندازی فرانت‌اند
+</div>
+
+#### 3. راه اندازی فرانت اند
+
+<div dir="ltr">
 
 ```bash
 cd frontend
 yarn install
 ```
 
+</div>
+
 فایل `frontend/.env` بسازید:
+
+<div dir="ltr">
+
 ```env
 REACT_APP_BACKEND_URL=http://localhost:8001
 ```
 
-اجرای فرانت‌اند:
+</div>
+
+اجرای فرانت اند:
+
+<div dir="ltr">
+
 ```bash
 yarn start
 ```
 
-#### ۴. راه‌اندازی حساب ادمین
+</div>
 
-1. با ایمیلی که در `ADMIN_EMAIL` تنظیم کردید ثبت‌نام کنید
-2. اندپوینت تنظیم ادمین رو صدا بزنید:
+#### 4. راه اندازی حساب ادمین
+
+با ایمیلی که در ADMIN_EMAIL تنظیم کردید ثبت نام کنید و بعد این دستور رو بزنید:
+
+<div dir="ltr">
+
 ```bash
 curl -X POST http://localhost:8001/api/admin/setup
 ```
+
+</div>
 
 ## دریافت اطلاعات Cloudflare
 
 ### API Token
 
 1. وارد [داشبورد Cloudflare](https://dash.cloudflare.com) بشید
-2. آیکون پروفایل → **My Profile**
-3. **API Tokens** → **Create Token**
-4. قالب **Edit zone DNS** رو انتخاب کنید
+2. آیکون پروفایل و بعد My Profile
+3. API Tokens و بعد Create Token
+4. قالب Edit zone DNS رو انتخاب کنید
 5. در Zone Resources دامنه خودتون رو انتخاب کنید
-6. **Continue to summary** → **Create Token**
-7. توکن رو کپی کنید (فقط یک بار نمایش داده می‌شه!)
+6. Continue to summary و بعد Create Token
+7. توکن رو کپی کنید - فقط یک بار نمایش داده میشه
 
 ### Zone ID
 
 1. وارد [داشبورد Cloudflare](https://dash.cloudflare.com) بشید
 2. روی دامنه خودتون کلیک کنید
-3. در صفحه Overview، **Zone ID** رو در ستون سمت راست پیدا کنید
+3. در صفحه Overview در ستون سمت راست Zone ID رو پیدا کنید
 4. Zone ID رو کپی کنید
 
-## راه‌اندازی تایید ایمیل
+## راه اندازی تایید ایمیل
 
-تایید ایمیل نیاز به یک حساب Gmail با **App Password** داره. این برای ارسال کد تایید ۶ رقمی به کاربران هنگام ثبت‌نام استفاده می‌شه.
+تایید ایمیل نیاز به یک حساب Gmail با App Password داره. این برای ارسال کد تایید 6 رقمی به کاربران هنگام ثبت نام استفاده میشه.
 
-### مرحله ۱: فعال‌سازی تایید دو مرحله‌ای
+### مرحله 1 - فعال سازی تایید دو مرحله ای
 
 1. وارد [تنظیمات امنیتی گوگل](https://myaccount.google.com/security) بشید
-2. **2-Step Verification** رو پیدا و فعال کنید
+2. گزینه 2-Step Verification رو پیدا و فعال کنید
 3. مراحل رو دنبال کنید
 
-### مرحله ۲: ساخت App Password
+### مرحله 2 - ساخت App Password
 
 1. وارد [App Passwords گوگل](https://myaccount.google.com/apppasswords) بشید
-2. یک نام وارد کنید (مثلاً `DNSLAB`)
-3. روی **Create** کلیک کنید
-4. گوگل یک **رمز ۱۶ کاراکتری** نشون میده (مثلاً `abcd efgh ijkl mnop`)
-5. **این رمز رو کپی کنید** - برای نصب بهش نیاز دارید
+2. یک نام وارد کنید مثلا DNSLAB
+3. روی Create کلیک کنید
+4. گوگل یک رمز 16 کاراکتری نشون میده مثلا `abcd efgh ijkl mnop`
+5. این رمز رو کپی کنید - برای نصب بهش نیاز دارید
 
-### مرحله ۳: پیکربندی
+### مرحله 3 - پیکربندی
 
-اگه از اسکریپت نصب خودکار استفاده می‌کنید، خودش می‌پرسه:
-- **آدرس Gmail**: جیمیلی که App Password رو باهاش ساختید
-- **App Password**: کد ۱۶ کاراکتری از مرحله ۲
+اگه از اسکریپت نصب خودکار استفاده میکنید خودش میپرسه. اگه دستی نصب میکنید به `backend/.env` اضافه کنید:
 
-اگه دستی نصب می‌کنید، به `backend/.env` اضافه کنید:
+<div dir="ltr">
+
 ```env
-SMTP_EMAIL=ایمیل_جیمیل@gmail.com
+SMTP_EMAIL=your_gmail@gmail.com
 SMTP_PASSWORD=abcd efgh ijkl mnop
 ```
 
+</div>
+
 ### نحوه کارکرد
 
-1. کاربر با آدرس Gmail ثبت‌نام می‌کنه
-2. یک کد تایید ۶ رقمی به ایمیلش ارسال می‌شه
-3. کاربر کد رو در صفحه تایید وارد می‌کنه
-4. بعد از تایید می‌تونه وارد بشه و از داشبورد استفاده کنه
-5. کدهای تایید بعد از ۱۰ دقیقه منقضی می‌شن
-6. کاربر می‌تونه کد جدید درخواست کنه
+1. کاربر با آدرس Gmail ثبت نام میکنه
+2. یک کد تایید 6 رقمی به ایمیلش ارسال میشه
+3. کاربر کد رو در صفحه تایید وارد میکنه
+4. بعد از تایید میتونه وارد بشه و از داشبورد استفاده کنه
+5. کدهای تایید بعد از 10 دقیقه منقضی میشن
+6. کاربر میتونه کد جدید درخواست کنه
 
-## اندپوینت‌های API
+## اندپوینت های API
 
 ### احراز هویت
-| متد | اندپوینت | توضیح |
-|-----|----------|-------|
-| POST | `/api/auth/register` | ثبت‌نام (فقط Gmail) - ارسال کد تایید |
-| POST | `/api/auth/verify` | تایید ایمیل با کد ۶ رقمی |
+
+<div dir="ltr">
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | ثبت نام - ارسال کد تایید |
+| POST | `/api/auth/verify` | تایید ایمیل با کد 6 رقمی |
 | POST | `/api/auth/resend-code` | ارسال مجدد کد تایید |
-| POST | `/api/auth/login` | ورود (فقط کاربران تایید شده) |
+| POST | `/api/auth/login` | ورود - فقط کاربران تایید شده |
 | GET | `/api/auth/me` | اطلاعات کاربر فعلی |
 
+</div>
+
 ### رکوردهای DNS
-| متد | اندپوینت | توضیح |
-|-----|----------|-------|
+
+<div dir="ltr">
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | GET | `/api/dns/records` | لیست رکوردهای کاربر |
 | POST | `/api/dns/records` | ساخت رکورد DNS |
 | PUT | `/api/dns/records/:id` | ویرایش رکورد |
 | DELETE | `/api/dns/records/:id` | حذف رکورد |
-| GET | `/api/domains` | لیست دامنه‌های فعال |
+| GET | `/api/domains` | لیست دامنه های فعال |
+
+</div>
 
 ### مدیریت
-| متد | اندپوینت | توضیح |
-|-----|----------|-------|
+
+<div dir="ltr">
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | GET | `/api/admin/stats` | آمار پلتفرم |
 | GET | `/api/admin/users` | لیست کاربران |
 | PUT | `/api/admin/users/:id/plan` | تغییر پلن کاربر |
 | DELETE | `/api/admin/users/:id` | حذف کاربر |
-| GET | `/api/admin/domains` | لیست دامنه‌ها |
+| GET | `/api/admin/domains` | لیست دامنه ها |
 | POST | `/api/admin/domains` | افزودن دامنه |
-| PUT | `/api/admin/domains/:id` | ویرایش دامنه (فعال/غیرفعال) |
+| PUT | `/api/admin/domains/:id` | ویرایش دامنه |
 | DELETE | `/api/admin/domains/:id` | حذف دامنه |
 | POST | `/api/admin/setup` | ارتقای کاربر به ادمین |
 
+</div>
+
 ## ساختار پروژه
+
+<div dir="ltr">
 
 ```
 dnslab-biz/
 ├── backend/
-│   ├── server.py           # اپلیکیشن FastAPI
-│   ├── requirements.txt    # وابستگی‌های پایتون
-│   └── .env               # متغیرهای محیطی بک‌اند
+│   ├── server.py           # FastAPI application
+│   ├── requirements.txt    # Python dependencies
+│   └── .env               # Backend environment variables
 ├── frontend/
 │   ├── public/
-│   │   ├── index.html      # قالب HTML
-│   │   ├── logo.svg        # لوگوی اپلیکیشن
-│   │   └── favicon.svg     # فاویکون مرورگر
+│   │   ├── index.html
+│   │   ├── logo.svg
+│   │   └── favicon.svg
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ui/         # کامپوننت‌های Shadcn UI
-│   │   │   └── Navbar.js   # نوار ناوبری
+│   │   │   ├── ui/         # Shadcn UI components
+│   │   │   └── Navbar.js
 │   │   ├── contexts/
-│   │   │   ├── AuthContext.js      # وضعیت احراز هویت
-│   │   │   ├── ThemeContext.js     # تم تاریک/روشن
-│   │   │   └── LanguageContext.js  # زبان EN/FA
+│   │   │   ├── AuthContext.js
+│   │   │   ├── ThemeContext.js
+│   │   │   └── LanguageContext.js
 │   │   ├── pages/
-│   │   │   ├── Landing.js   # صفحه اصلی
-│   │   │   ├── Login.js     # صفحه ورود
-│   │   │   ├── Register.js  # صفحه ثبت‌نام
-│   │   │   ├── VerifyEmail.js # صفحه تایید ایمیل
-│   │   │   ├── Dashboard.js # مدیریت DNS
-│   │   │   └── Admin.js     # پنل مدیریت
+│   │   │   ├── Landing.js
+│   │   │   ├── Login.js
+│   │   │   ├── Register.js
+│   │   │   ├── VerifyEmail.js
+│   │   │   ├── Dashboard.js
+│   │   │   └── Admin.js
 │   │   ├── translations/
-│   │   │   └── index.js     # ترجمه‌های EN/FA
-│   │   ├── App.js           # کامپوننت اصلی
-│   │   └── index.css        # استایل‌های سراسری
+│   │   │   └── index.js
+│   │   ├── App.js
+│   │   └── index.css
 │   ├── package.json
-│   └── .env               # متغیرهای محیطی فرانت‌اند
-├── install.sh              # اسکریپت نصب خودکار
-├── backup.sh               # اسکریپت بکاپ و بازگردانی
+│   └── .env
+├── install.sh
+├── backup.sh
 └── README.md
 ```
 
-## پلن‌ها و محدودیت‌ها
+</div>
 
-| امکان | رایگان | ویژه |
-|-------|--------|------|
-| رکوردهای DNS | ۲ | نامحدود |
-| انواع رکورد | A, AAAA, CNAME, NS | A, AAAA, CNAME, NS |
-| DNS Cloudflare | بله | بله |
-| داشبورد | بله | بله |
-| پشتیبانی اولویت‌دار | خیر | بله |
-| TTL سفارشی | خیر | بله |
+## پلن ها و محدودیت ها
+
+<div dir="ltr">
+
+| Feature | Free | Premium |
+|---------|------|---------|
+| DNS Records | 2 | Unlimited |
+| Record Types | A, AAAA, CNAME, NS | A, AAAA, CNAME, NS |
+| Cloudflare DNS | Yes | Yes |
+| Dashboard | Yes | Yes |
+| Priority Support | No | Yes |
+
+</div>
 
 ## متغیرهای محیطی
 
-### بک‌اند (`backend/.env`)
+### بک اند - backend/.env
 
-| متغیر | توضیح | الزامی |
-|--------|-------|--------|
-| `MONGO_URL` | رشته اتصال MongoDB | بله |
-| `DB_NAME` | نام دیتابیس | بله |
-| `CLOUDFLARE_API_TOKEN` | توکن API کلادفلر | بله |
-| `CLOUDFLARE_ZONE_ID` | شناسه زون کلادفلر | بله |
-| `JWT_SECRET` | کلید امضای JWT | بله |
-| `ADMIN_EMAIL` | ایمیل ادمین | بله |
-| `SMTP_EMAIL` | آدرس Gmail برای ارسال ایمیل تایید | بله |
-| `SMTP_PASSWORD` | App Password جیمیل (۱۶ کاراکتر) | بله |
-| `TELEGRAM_BOT_TOKEN` | توکن بات تلگرام (برای بکاپ) | خیر |
-| `TELEGRAM_CHAT_ID` | شناسه چت تلگرام (برای بکاپ) | خیر |
-| `CORS_ORIGINS` | مبداهای مجاز CORS | خیر (پیش‌فرض: *) |
+<div dir="ltr">
 
-### فرانت‌اند (`frontend/.env`)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `MONGO_URL` | MongoDB connection string | Yes |
+| `DB_NAME` | Database name | Yes |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | Yes |
+| `CLOUDFLARE_ZONE_ID` | Cloudflare zone ID | Yes |
+| `JWT_SECRET` | JWT signing secret | Yes |
+| `ADMIN_EMAIL` | Admin user email | Yes |
+| `SMTP_EMAIL` | Gmail for verification emails | Yes |
+| `SMTP_PASSWORD` | Gmail App Password (16 chars) | Yes |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (backups) | No |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID (backups) | No |
+| `CORS_ORIGINS` | Allowed CORS origins | No |
 
-| متغیر | توضیح | الزامی |
-|--------|-------|--------|
-| `REACT_APP_BACKEND_URL` | آدرس API بک‌اند | بله |
+</div>
+
+### فرانت اند - frontend/.env
+
+<div dir="ltr">
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `REACT_APP_BACKEND_URL` | Backend API URL | Yes |
+
+</div>
 
 ## بکاپ و بازگردانی
 
-پروژه شامل یک سیستم بکاپ خودکار هست که دیتابیس MongoDB رو ذخیره و به حساب تلگرام شما ارسال می‌کنه.
+پروژه شامل یک سیستم بکاپ خودکار هست که دیتابیس MongoDB رو ذخیره و به حساب تلگرام شما ارسال میکنه.
 
-### پیش‌نیازها
+### پیش نیازها
 
-1. **ساخت بات تلگرام:**
-   - در تلگرام به `@BotFather` پیام بدید
-   - `/newbot` بفرستید و مراحل رو دنبال کنید
-   - **توکن بات** رو کپی کنید (مثلاً `123456:ABC-DEF...`)
+1. ساخت بات تلگرام - به `@BotFather` پیام بدید و `/newbot` بفرستید و توکن بات رو کپی کنید
+2. دریافت Chat ID - به `@userinfobot` پیام بدید و Chat ID رو کپی کنید
+3. بات رو Start کنید - الزامی
+4. به فایل env اضافه کنید:
 
-2. **دریافت Chat ID:**
-   - در تلگرام به `@userinfobot` پیام بدید
-   - **Chat ID** رو کپی کنید (مثلاً `865122337`)
+<div dir="ltr">
 
-3. **استارت بات:**
-   - بات خودتون رو در تلگرام باز کنید و **Start** رو بزنید (الزامی!)
+```bash
+echo 'TELEGRAM_BOT_TOKEN=your_bot_token' >> backend/.env
+echo 'TELEGRAM_CHAT_ID=your_chat_id' >> backend/.env
+```
 
-4. **افزودن به محیط:**
-   ```bash
-   echo 'TELEGRAM_BOT_TOKEN=توکن_بات' >> backend/.env
-   echo 'TELEGRAM_CHAT_ID=شناسه_چت' >> backend/.env
-   ```
+</div>
 
 ### بکاپ دستی
 
-گرفتن بکاپ و ارسال به تلگرام:
+<div dir="ltr">
 
 ```bash
 cd ~/DDNS
 bash backup.sh backup
 ```
 
-خروجی:
-```
-  DNSLAB.BIZ - Database Backup
+</div>
 
-  [OK] Backup created: backups/ddns_land_2026-03-09_03-00-00.tar.gz (12K)
-  [OK] Sent to Telegram
-  [OK] Cleanup: keeping last 7 backups
-  [OK] Backup complete!
-```
+در تلگرام فایلی با این جزئیات دریافت میکنید:
 
-در تلگرام فایلی با این جزئیات دریافت می‌کنید:
 ```
-✅ DNSLAB Backup
-📅 2026-03-09 03:00
-📦 Size: 12K
-👥 Users: 25
-📋 Records: 48
-🌐 Domains: 3
+DNSLAB Backup
+Date: 2026-03-09 03:00
+Size: 12K
+Users: 25
+Records: 48
+Domains: 3
 ```
 
 ### بکاپ خودکار روزانه
 
-تنظیم cron job برای بکاپ روزانه ساعت ۳ صبح:
+تنظیم برای بکاپ روزانه ساعت 3 صبح:
+
+<div dir="ltr">
 
 ```bash
 bash backup.sh cron
 ```
 
+</div>
+
 ### بازگردانی از بکاپ
 
-**روی همون سرور (بازگردانی بکاپ قبلی):**
+روی همون سرور:
+
+<div dir="ltr">
 
 ```bash
 bash backup.sh restore
 ```
 
-سپس:
-1. لیست بکاپ‌های موجود نمایش داده می‌شه
-2. شماره بکاپ رو انتخاب کنید
-3. با `y` تایید کنید
-4. ریستارت: `sudo systemctl restart ddns-backend`
+</div>
 
-**روی سرور جدید (انتقال):**
+سپس شماره بکاپ رو انتخاب کنید و با y تایید کنید و بعد ریستارت کنید:
+
+<div dir="ltr">
 
 ```bash
-# ۱. نصب پروژه روی سرور جدید
+sudo systemctl restart ddns-backend
+```
+
+</div>
+
+### انتقال به سرور جدید
+
+<div dir="ltr">
+
+```bash
+# 1. Install on new server
 git clone https://github.com/MamawliV2/DDNS.git
 cd DDNS
 sudo bash install.sh
 
-# ۲. فایل بکاپ رو از تلگرام دانلود و به سرور منتقل کنید
+# 2. Copy backup file from Telegram to server
 mkdir -p backups
-scp user@your-pc:~/Downloads/ddns_land_2026-03-09.tar.gz ~/DDNS/backups/
+scp user@pc:~/Downloads/backup.tar.gz ~/DDNS/backups/
 
-# ۳. بازگردانی
+# 3. Restore
 bash backup.sh restore
 
-# ۴. ریستارت بک‌اند
+# 4. Restart
 sudo systemctl restart ddns-backend
 ```
 
-### بازگردانی از فایل مشخص
-
-```bash
-bash backup.sh restore /path/to/backup_file.tar.gz
-```
+</div>
 
 ### تمام دستورات بکاپ
 
-| دستور | توضیح |
-|-------|-------|
-| `bash backup.sh backup` | بکاپ الان + ارسال به تلگرام |
-| `bash backup.sh restore` | بازگردانی از بکاپ‌های موجود |
-| `bash backup.sh restore file.tar.gz` | بازگردانی از فایل مشخص |
-| `bash backup.sh cron` | تنظیم بکاپ خودکار روزانه (ساعت ۳ صبح) |
-| `bash backup.sh auto` | بکاپ بی‌صدا (برای cron) |
+<div dir="ltr">
 
-> **نکته:** بکاپ‌های محلی در پوشه `backups/` ذخیره می‌شن. فقط ۷ بکاپ آخر نگهداری می‌شن.
+| Command | Description |
+|---------|-------------|
+| `bash backup.sh backup` | Backup + send to Telegram |
+| `bash backup.sh restore` | Restore from backups |
+| `bash backup.sh restore file.tar.gz` | Restore specific file |
+| `bash backup.sh cron` | Setup daily auto-backup |
+| `bash backup.sh auto` | Silent backup (for cron) |
+
+</div>
 
 ## نکات امنیتی
 
-- هرگز فایل‌های `.env` رو در سیستم کنترل نسخه commit نکنید (`.gitignore` از قبل تنظیم شده)
-- از مقادیر قوی و یکتا برای `JWT_SECRET` استفاده کنید (اسکریپت نصب خودکار تولید می‌کنه)
-- توکن‌های API کلادفلر باید حداقل دسترسی رو داشته باشن (فقط Edit Zone DNS)
-- اندپوینت `/api/admin/setup` بعد از تنظیم اولیه در محیط عملیاتی باید غیرفعال بشه
-- گواهی‌های SSL توسط cron job مربوط به certbot خودکار تمدید می‌شن
+- هرگز فایل های env رو در گیتهاب commit نکنید
+- از مقادیر قوی و یکتا برای JWT_SECRET استفاده کنید
+- توکن های API کلادفلر باید حداقل دسترسی رو داشته باشن
+- گواهی های SSL توسط certbot خودکار تمدید میشن
 
 ## مشارکت
 
 1. ریپوزیتوری رو Fork کنید
-2. یک شاخه جدید بسازید (`git checkout -b feature/amazing-feature`)
-3. تغییرات رو Commit کنید (`git commit -m 'Add amazing feature'`)
-4. به شاخه Push کنید (`git push origin feature/amazing-feature`)
-5. Pull Request باز کنید
+2. یک شاخه جدید بسازید
+3. تغییرات رو Commit کنید
+4. Pull Request باز کنید
 
 ## لایسنس
 
-این پروژه متن‌باز هست و تحت [لایسنس MIT](LICENSE) در دسترسه.
+این پروژه متن باز هست و تحت [لایسنس MIT](LICENSE) در دسترسه.
 
 ## تماس
 
-برای پلن‌های ویژه یا پشتیبانی، از طریق تلگرام تماس بگیرید: [@DZ_CT](https://t.me/DZ_CT)
+برای پلن های ویژه یا پشتیبانی از طریق تلگرام تماس بگیرید: [@DZ_CT](https://t.me/DZ_CT)
+
+</div>
