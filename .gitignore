@@ -30,3 +30,7 @@ memory/
 .ruff_cache/
 .pytest_cache/
 .gitconfig
+-e 
+# Environment files
+*.env
+*.env.*
