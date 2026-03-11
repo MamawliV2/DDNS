@@ -44,11 +44,56 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import {
   Plus, Pencil, Trash2, Loader2, Database, Crown, Server, Send, Globe,
+  Copy, Check, Link, Wifi,
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const TELEGRAM_URL = "https://t.me/DZ_CT";
+
+// DNS record type config: icon, badge color, bg accent
+const RECORD_TYPE_CONFIG = {
+  A: { icon: Globe, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20', badge: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30' },
+  AAAA: { icon: Wifi, color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20', badge: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30' },
+  CNAME: { icon: Link, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20', badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  NS: { icon: Server, color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/20', badge: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' },
+};
+
+function RecordTypeBadge({ type }) {
+  const config = RECORD_TYPE_CONFIG[type] || RECORD_TYPE_CONFIG.A;
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border font-mono text-[10px] font-semibold ${config.badge}`} data-testid={`record-type-badge-${type}`}>
+      <Icon className="h-3 w-3" />
+      {type}
+    </span>
+  );
+}
+
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success('Copied!');
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Copy failed');
+    }
+  };
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-7 w-7 shrink-0"
+      onClick={handleCopy}
+      data-testid="copy-record-btn"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500 animate-copy-flash" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+    </Button>
+  );
+}
 
 function StatsCard({ icon: Icon, title, value, subtitle, accentColor }) {
   return (
@@ -281,15 +326,16 @@ export default function Dashboard() {
               <>
                 {/* Mobile Card View */}
                 <div className="block sm:hidden p-4 space-y-3">
-                  {records.map((record) => (
+                  {records.map((record, index) => (
                     <div
                       key={record.id}
                       data-testid={`record-card-${record.id}`}
-                      className="rounded-lg border border-border/60 p-4 space-y-3"
+                      className="rounded-lg border border-border/60 p-4 space-y-3 animate-record-in"
+                      style={{ animationDelay: `${index * 60}ms` }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-[10px]">{record.record_type}</Badge>
+                          <RecordTypeBadge type={record.record_type} />
                           <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.{record.domain_name || 'dnslab.biz'}</span></span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -301,8 +347,11 @@ export default function Dashboard() {
                           </Button>
                         </div>
                       </div>
-                      <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all" dir="ltr">
-                        {record.content}
+                      <div className="flex items-center gap-1">
+                        <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all flex-1" dir="ltr">
+                          {record.content}
+                        </div>
+                        <CopyButton text={record.content} />
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>TTL: {record.ttl === 1 ? 'Auto' : record.ttl}</span>
@@ -327,19 +376,25 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {records.map((record) => (
-                      <TableRow key={record.id} data-testid={`record-row-${record.id}`}>
+                    {records.map((record, index) => (
+                      <TableRow
+                        key={record.id}
+                        data-testid={`record-row-${record.id}`}
+                        className="animate-record-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
                         <TableCell>
-                          <Badge variant="outline" className="font-mono text-[10px]">
-                            {record.record_type}
-                          </Badge>
+                          <RecordTypeBadge type={record.record_type} />
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm">{record.name}</span>
                           <span className="text-muted-foreground text-xs">.{record.domain_name || 'dnslab.biz'}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono text-sm">{record.content}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-sm">{record.content}</span>
+                            <CopyButton text={record.content} />
+                          </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell font-mono text-xs">
                           {record.ttl === 1 ? 'Auto' : record.ttl}
@@ -487,8 +542,8 @@ export default function Dashboard() {
               <div className="rounded-md bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('dashboard.subdomain')}</p>
                 <p className="font-mono text-sm">
-                  <Badge variant="outline" className="me-2 text-[10px]">{editRecord.record_type}</Badge>
-                  {editRecord.name}.{editRecord.domain_name || 'dnslab.biz'}
+                  <RecordTypeBadge type={editRecord.record_type} />
+                  <span className="ms-2">{editRecord.name}.{editRecord.domain_name || 'dnslab.biz'}</span>
                 </p>
               </div>
             )}

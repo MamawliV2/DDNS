@@ -17,6 +17,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import urllib.parse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -52,6 +53,10 @@ SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 
 # Verification code expiry (minutes)
 VERIFY_CODE_EXPIRY = 10
+
+# Telegram notification config
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
 app = FastAPI(title="DNSLAB.BIZ API")
 api_router = APIRouter(prefix="/api")
@@ -174,6 +179,24 @@ def send_verification_email(to_email: str, code: str):
         return False
 
 
+def send_telegram_notification(message: str):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        logger.warning("Telegram not configured, skipping notification")
+        return
+    try:
+        encoded = urllib.parse.quote(message)
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage?chat_id={TELEGRAM_CHAT_ID}&text={encoded}&parse_mode=HTML"
+        import urllib.request
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                logger.info("Telegram notification sent")
+            else:
+                logger.warning(f"Telegram notification failed: {resp.status}")
+    except Exception as e:
+        logger.error(f"Failed to send Telegram notification: {e}")
+
+
 async def get_current_user(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -285,6 +308,10 @@ async def register(data: UserRegister, background_tasks: BackgroundTasks):
     await db.users.insert_one(user_doc)
 
     background_tasks.add_task(send_verification_email, data.email, code)
+    background_tasks.add_task(
+        send_telegram_notification,
+        f"<b>New User Registration</b>\n\nEmail: <code>{data.email}</code>\nTime: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+    )
     return {"message": "Verification code sent", "email": data.email, "verified": False}
 
 
