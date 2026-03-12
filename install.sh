@@ -612,17 +612,19 @@ done
 print_ok "Email verification: ${SMTP_EMAIL}"
 
 # ============================================================
-#  STEP 4b: Telegram Backup (Optional)
+#  STEP 4b: Telegram Integration (Optional)
 # ============================================================
 echo ""
-echo -e "  ${BOLD}Telegram Backup (Optional)${NC}"
-echo -e "  ${DIM}Send automatic database backups to your Telegram.${NC}"
+echo -e "  ${BOLD}Telegram Integration (Optional)${NC}"
+echo -e "  ${DIM}Used for:${NC}"
+echo -e "  ${DIM}  - Automatic database backups to your Telegram${NC}"
+echo -e "  ${DIM}  - Admin notifications when a new user registers${NC}"
 echo ""
 
 TELEGRAM_BOT_TOKEN=""
 TELEGRAM_CHAT_ID=""
 
-read -p "  Setup Telegram backup? (y/N): " SETUP_TG
+read -p "  Setup Telegram integration? (y/N): " SETUP_TG
 if [[ "$SETUP_TG" =~ ^[Yy]$ ]]; then
     echo ""
     echo -e "  ${DIM}1. Message @BotFather on Telegram, send /newbot${NC}"
@@ -643,7 +645,7 @@ if [[ "$SETUP_TG" =~ ^[Yy]$ ]]; then
         read -p "  Telegram Chat ID: " TELEGRAM_CHAT_ID
     done
 
-    print_ok "Telegram backup configured"
+    print_ok "Telegram integration configured"
 else
     print_info "Skipped. You can set it up later in backend/.env"
 fi
@@ -1043,9 +1045,13 @@ if [ "$USE_SSL" = true ]; then
     echo -e "    sudo certbot renew --dry-run            ${DIM}# Test SSL renewal${NC}"
 fi
 
-# Setup backup if Telegram was configured
+# Setup backup & notifications if Telegram was configured
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
     chmod +x "$PROJECT_DIR/backup.sh"
+    echo ""
+    echo -e "  ${BOLD}Telegram Features:${NC}"
+    echo -e "    ${GREEN}[Active]${NC} Admin notifications on new user registration"
+    echo -e "    ${GREEN}[Active]${NC} Database backup to Telegram"
     echo ""
     echo -e "  ${BOLD}Backup Commands:${NC}"
     echo -e "    bash backup.sh backup                   ${DIM}# Backup now${NC}"
