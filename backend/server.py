@@ -184,11 +184,11 @@ def send_telegram_notification(message: str):
         logger.warning("Telegram not configured, skipping notification")
         return
     try:
+        import urllib.request as urlreq
         encoded = urllib.parse.quote(message)
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage?chat_id={TELEGRAM_CHAT_ID}&text={encoded}&parse_mode=HTML"
-        import urllib.request
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        req = urlreq.Request(url)
+        with urlreq.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
                 logger.info("Telegram notification sent")
             else:
