@@ -34,3 +34,7 @@ memory/
 .pytest_cache/
 .gitconfig
 backups/
+-e 
+# Environment files
+*.env
+*.env.*
