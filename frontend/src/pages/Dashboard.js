@@ -334,11 +334,12 @@ export default function Dashboard() {
                       style={{ animationDelay: `${index * 60}ms` }}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <RecordTypeBadge type={record.record_type} />
-                          <span className="font-mono text-sm font-medium">{record.name}<span className="text-muted-foreground">.{record.domain_name || 'dnslab.biz'}</span></span>
+                          <span className="font-mono text-sm font-medium truncate">{record.name}<span className="text-muted-foreground">.{record.domain_name || 'dnslab.biz'}</span></span>
+                          <CopyButton text={`${record.name}.${record.domain_name || 'dnslab.biz'}`} />
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(record)} data-testid={`edit-record-mobile-${record.id}`}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -347,11 +348,8 @@ export default function Dashboard() {
                           </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all flex-1" dir="ltr">
-                          {record.content}
-                        </div>
-                        <CopyButton text={record.content} />
+                      <div className="font-mono text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2 break-all" dir="ltr">
+                        {record.content}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>TTL: {record.ttl === 1 ? 'Auto' : record.ttl}</span>
@@ -387,14 +385,14 @@ export default function Dashboard() {
                           <RecordTypeBadge type={record.record_type} />
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono text-sm">{record.name}</span>
-                          <span className="text-muted-foreground text-xs">.{record.domain_name || 'dnslab.biz'}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-sm">{record.name}</span>
+                            <span className="text-muted-foreground text-xs">.{record.domain_name || 'dnslab.biz'}</span>
+                            <CopyButton text={`${record.name}.${record.domain_name || 'dnslab.biz'}`} />
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-sm">{record.content}</span>
-                            <CopyButton text={record.content} />
-                          </div>
+                          <span className="font-mono text-sm">{record.content}</span>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell font-mono text-xs">
                           {record.ttl === 1 ? 'Auto' : record.ttl}
