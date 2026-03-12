@@ -7,6 +7,9 @@ __pycache__/
 .env
 backend/.env
 frontend/.env
+*.env
+*.env.*
+!*.env.example
 
 # Build files
 frontend/build/
@@ -31,43 +34,3 @@ memory/
 .pytest_cache/
 .gitconfig
 backups/
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
