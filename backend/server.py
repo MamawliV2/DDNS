@@ -760,14 +760,14 @@ async def admin_delete_record(record_id: str, admin=Depends(get_admin_user)):
 
 @api_router.post("/admin/setup")
 async def admin_setup():
-    """One-time admin setup: promotes the ADMIN_EMAIL user to admin role."""
+    """One-time admin setup: promotes the ADMIN_EMAIL user to admin role and verifies them."""
     admin_user = await db.users.find_one({"email": ADMIN_EMAIL})
     if not admin_user:
         raise HTTPException(status_code=404, detail=f"User with email {ADMIN_EMAIL} not found. Register first.")
 
     await db.users.update_one(
         {"email": ADMIN_EMAIL},
-        {"$set": {"role": "admin"}}
+        {"$set": {"role": "admin", "verified": True}, "$unset": {"verification_code": "", "code_expires_at": ""}}
     )
     return {"message": f"User {ADMIN_EMAIL} is now admin"}
 
