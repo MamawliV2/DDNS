@@ -95,6 +95,16 @@ BACKEND_PORT=8001
 #  MANAGEMENT MENU (called via: ddns or install.sh menu)
 # ============================================================
 
+ask_apply_now() {
+    echo ""
+    read -p "  Apply now? (y/N): " APPLY_NOW
+    if [[ "$APPLY_NOW" =~ ^[Yy]$ ]]; then
+        menu_apply_all
+    else
+        echo -e "  ${YELLOW}Changes saved. Use option ${BOLD}11${NC}${YELLOW} to apply later.${NC}"
+    fi
+}
+
 menu_update() {
     echo -e "\n${CYAN}${BOLD}  Updating DNSLAB.BIZ...${NC}\n"
 
@@ -171,8 +181,7 @@ menu_change_domain() {
         print_warn "SSL may need manual setup: sudo certbot --nginx -d ${NEW_DOMAIN}"
     fi
 
-    echo ""
-    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to rebuild frontend and restart services.${NC}"
+    ask_apply_now
 }
 
 menu_edit_env() {
@@ -226,7 +235,7 @@ menu_edit_env() {
         if [ -n "$NEW_VAL" ]; then
             set_env_val "$sel_key" "$NEW_VAL" "$BACKEND_ENV"
             print_ok "${sel_key} updated"
-            echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+            ask_apply_now
         else
             print_info "No change"
         fi
@@ -251,8 +260,7 @@ menu_cloudflare() {
     read -p "  New Zone ID (Enter to skip): " NEW_ZONE
     [ -n "$NEW_ZONE" ] && { set_env_val "CLOUDFLARE_ZONE_ID" "$NEW_ZONE" "$BACKEND_ENV"; print_ok "Zone ID updated"; }
 
-    echo ""
-    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+    ask_apply_now
 }
 
 menu_smtp() {
@@ -271,8 +279,7 @@ menu_smtp() {
     read -p "  New App Password (Enter to skip): " NEW_PASS
     [ -n "$NEW_PASS" ] && { set_env_val "SMTP_PASSWORD" "$NEW_PASS" "$BACKEND_ENV"; print_ok "SMTP Password updated"; }
 
-    echo ""
-    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+    ask_apply_now
 }
 
 menu_telegram() {
@@ -309,8 +316,7 @@ menu_telegram() {
         fi
     fi
 
-    echo ""
-    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+    ask_apply_now
 }
 
 menu_admin() {
@@ -325,9 +331,10 @@ menu_admin() {
         set_env_val "ADMIN_EMAIL" "$NEW_ADMIN" "$BACKEND_ENV"
         print_ok "Admin email updated to: $NEW_ADMIN"
         echo ""
-        echo -e "  ${YELLOW}Important: After Apply All Changes, run:${NC}"
+        echo -e "  ${YELLOW}Important: After applying changes, run:${NC}"
         echo -e "  ${DIM}  1. Register the new email at your website${NC}"
         echo -e "  ${DIM}  2. curl -X POST http://127.0.0.1:${BACKEND_PORT}/api/admin/setup${NC}"
+        ask_apply_now
     fi
 }
 
