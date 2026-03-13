@@ -29,6 +29,11 @@
 - **Mobile Responsive** - Fully responsive design with mobile card views
 - **Gmail-only Registration** - Registration restricted to @gmail.com addresses
 - **Premium Plans** - Upgrade to unlimited records via Telegram contact
+- **Page Animations** - Smooth transitions between pages
+- **Record Type Visuals** - Distinct icons and colors for each DNS record type (A, AAAA, CNAME, NS)
+- **One-Click Copy** - Copy full subdomain name to clipboard instantly
+- **Admin Telegram Alerts** - Admin receives Telegram notification when a new user registers
+- **Management CLI** - `ddns` command for easy post-install management
 
 ## Tech Stack
 
@@ -56,16 +61,46 @@ The install script will:
 2. Ask if you want to use a custom domain (+ SSL with Let's Encrypt)
 3. Ask for your Cloudflare API Token and Zone ID
 4. Ask for email verification credentials (Gmail + App Password)
-5. Ask for database configuration
-6. Ask for admin email and password
-7. Install all dependencies
-8. Configure environment variables
-9. Build the frontend for production
-10. Setup systemd service for backend
-11. Configure nginx as reverse proxy (if using domain)
-12. Obtain SSL certificate with certbot (if using domain)
-13. Create and promote the admin account
-14. Display access URLs including admin panel link
+5. Optionally setup Telegram integration (backups + admin alerts)
+6. Ask for database configuration
+7. Ask for admin email and password
+8. Install all dependencies
+9. Configure environment variables
+10. Build the frontend for production
+11. Setup systemd service for backend
+12. Configure nginx as reverse proxy (if using domain)
+13. Obtain SSL certificate with certbot (if using domain)
+14. Create and promote the admin account
+15. Register the `ddns` management command
+16. Display access URLs including admin panel link
+
+### Management Menu
+
+After installation, run the management menu anytime:
+
+```bash
+ddns
+```
+
+```
+  DNSLAB.BIZ - Management Panel
+
+   1)  Update          (git pull + rebuild + restart)
+   2)  Domain & SSL    (change domain, get SSL cert)
+   3)  Environment     (edit backend/.env variables)
+   4)  Cloudflare      (API token, zone ID)
+   5)  Email / SMTP    (Gmail, app password)
+   6)  Telegram        (bot token, chat ID, test)
+   7)  Admin Account   (change admin email)
+   8)  Restart Services(backend + nginx)
+   9)  Status & Logs   (health check, logs)
+  10)  Backup / Restore(database backup)
+
+  11)  Apply All Changes & Restart
+   0)  Exit
+```
+
+Each settings section lets you apply changes immediately or save for later bulk apply with option 11.
 
 ### Manual Installation
 
@@ -290,8 +325,8 @@ dnslab-biz/
 | `ADMIN_EMAIL` | Admin user email | Yes |
 | `SMTP_EMAIL` | Gmail address for sending verification emails | Yes |
 | `SMTP_PASSWORD` | Gmail App Password (16 characters) | Yes |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token (for backups) | No |
-| `TELEGRAM_CHAT_ID` | Telegram chat ID (for backups) | No |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (for backups & admin alerts) | No |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID (for backups & admin alerts) | No |
 | `CORS_ORIGINS` | Allowed CORS origins | No (default: *) |
 
 ### Frontend (`frontend/.env`)
@@ -302,7 +337,7 @@ dnslab-biz/
 
 ## Backup & Restore
 
-The project includes an automated backup system that saves your MongoDB database and sends it to your Telegram account.
+The project includes an automated backup system that saves your MongoDB database and sends it to your Telegram account. Telegram is also used to notify the admin when a new user registers.
 
 ### Prerequisites
 

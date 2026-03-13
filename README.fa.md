@@ -34,6 +34,11 @@
 - واکنش گرا - طراحی کاملا واکنش گرا برای موبایل
 - فقط Gmail - ثبت نام فقط با آدرس های gmail.com
 - پلن های ویژه - ارتقا به رکوردهای نامحدود از طریق تلگرام
+- انیمیشن صفحات - انتقال نرم بین صفحات
+- آیکون و رنگ متمایز - هر نوع رکورد DNS (A, AAAA, CNAME, NS) آیکون و رنگ مخصوص خودش رو داره
+- کپی با یک کلیک - کپی نام کامل ساب دامین با یک کلیک
+- اعلان تلگرام ادمین - هنگام ثبت نام کاربر جدید به ادمین در تلگرام اطلاع داده میشه
+- دستور مدیریت ddns - مدیریت آسان پروژه بعد از نصب از طریق ترمینال
 
 ## فناوری ها
 
@@ -70,16 +75,50 @@ chmod +x install.sh
 2. پیکربندی دامنه و SSL با Let's Encrypt
 3. دریافت API Token و Zone ID کلادفلر
 4. دریافت اطلاعات تایید ایمیل (Gmail و App Password)
-5. پیکربندی دیتابیس
-6. دریافت ایمیل و رمز ادمین
-7. نصب وابستگی ها
-8. تنظیم متغیرهای محیطی
-9. بیلد فرانت اند
-10. راه اندازی سرویس systemd
-11. پیکربندی nginx در صورت استفاده از دامنه
-12. دریافت گواهی SSL در صورت استفاده از دامنه
-13. ساخت و ارتقای حساب ادمین
-14. نمایش آدرس های دسترسی
+5. تنظیم تلگرام (بکاپ و اعلان ادمین) - اختیاری
+6. پیکربندی دیتابیس
+7. دریافت ایمیل و رمز ادمین
+8. نصب وابستگی ها
+9. تنظیم متغیرهای محیطی
+10. بیلد فرانت اند
+11. راه اندازی سرویس systemd
+12. پیکربندی nginx در صورت استفاده از دامنه
+13. دریافت گواهی SSL در صورت استفاده از دامنه
+14. ساخت و ارتقای حساب ادمین
+15. ثبت دستور مدیریت `ddns`
+16. نمایش آدرس های دسترسی
+
+### منوی مدیریت
+
+بعد از نصب هر زمان نیاز به تغییرات داشتید:
+
+<div dir="ltr">
+
+```bash
+ddns
+```
+
+```
+  DNSLAB.BIZ - Management Panel
+
+   1)  Update          (git pull + rebuild + restart)
+   2)  Domain & SSL    (change domain, get SSL cert)
+   3)  Environment     (edit backend/.env variables)
+   4)  Cloudflare      (API token, zone ID)
+   5)  Email / SMTP    (Gmail, app password)
+   6)  Telegram        (bot token, chat ID, test)
+   7)  Admin Account   (change admin email)
+   8)  Restart Services(backend + nginx)
+   9)  Status & Logs   (health check, logs)
+  10)  Backup / Restore(database backup)
+
+  11)  Apply All Changes & Restart
+   0)  Exit
+```
+
+</div>
+
+هر بخش بعد از تغییرات ازتون میپرسه میخاید همین الان اعمال بشه یا بعدا با گزینه 11 همه رو یکجا اعمال کنید.
 
 ### نصب دستی
 
@@ -365,8 +404,8 @@ dnslab-biz/
 | `ADMIN_EMAIL` | Admin user email | Yes |
 | `SMTP_EMAIL` | Gmail for verification emails | Yes |
 | `SMTP_PASSWORD` | Gmail App Password (16 chars) | Yes |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token (backups) | No |
-| `TELEGRAM_CHAT_ID` | Telegram chat ID (backups) | No |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (backups & alerts) | No |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID (backups & alerts) | No |
 | `CORS_ORIGINS` | Allowed CORS origins | No |
 
 </div>
@@ -383,7 +422,7 @@ dnslab-biz/
 
 ## بکاپ و بازگردانی
 
-پروژه شامل یک سیستم بکاپ خودکار هست که دیتابیس MongoDB رو ذخیره و به حساب تلگرام شما ارسال میکنه.
+پروژه شامل یک سیستم بکاپ خودکار هست که دیتابیس MongoDB رو ذخیره و به حساب تلگرام شما ارسال میکنه. همچنین هنگام ثبت نام کاربر جدید به ادمین در تلگرام اطلاع داده میشه.
 
 ### پیش نیازها
 
