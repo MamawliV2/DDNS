@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#  DNSLAB.BIZ - Automated Installation Script
+#  DNSLAB.BIZ - Automated Installation & Management Script
 #  Free Dynamic DNS Service powered by Cloudflare
 #  https://github.com/MamawliV2/DDNS
 # ============================================================
@@ -69,17 +69,495 @@ fail_exit() {
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# ---- .env helpers ----
+get_env_val() {
+    local key="$1"
+    local file="$2"
+    grep "^${key}=" "$file" 2>/dev/null | head -1 | cut -d'=' -f2-
+}
+
+set_env_val() {
+    local key="$1"
+    local value="$2"
+    local file="$3"
+    if grep -q "^${key}=" "$file" 2>/dev/null; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+    else
+        echo "${key}=${value}" >> "$file"
+    fi
+}
+
+BACKEND_ENV="$PROJECT_DIR/backend/.env"
+FRONTEND_ENV="$PROJECT_DIR/frontend/.env"
+BACKEND_PORT=8001
+
+# ============================================================
+#  MANAGEMENT MENU (called via: ddns or install.sh menu)
+# ============================================================
+
+menu_update() {
+    echo -e "\n${CYAN}${BOLD}  Updating DNSLAB.BIZ...${NC}\n"
+
+    cd "$PROJECT_DIR"
+    echo -e "  ${BOLD}1/4${NC} Pulling latest code..."
+    git pull origin main 2>&1 | while IFS= read -r line; do echo -e "  ${DIM}${line}${NC}"; done
+
+    echo -e "\n  ${BOLD}2/4${NC} Updating backend dependencies..."
+    cd "$PROJECT_DIR/backend"
+    if [ -d "venv" ]; then
+        source venv/bin/activate
+        pip install -r requirements.txt -q 2>/dev/null
+        print_ok "Backend packages updated"
+    else
+        print_warn "No venv found. Run full install first."
+    fi
+
+    echo -e "\n  ${BOLD}3/4${NC} Rebuilding frontend..."
+    cd "$PROJECT_DIR/frontend"
+    yarn install --network-timeout 120000 > /dev/null 2>&1
+    yarn build 2>&1 | tail -3
+    if [ -d "build" ] && [ -f "build/index.html" ]; then
+        print_ok "Frontend rebuilt"
+    else
+        print_warn "Frontend build may have issues"
+    fi
+
+    echo -e "\n  ${BOLD}4/4${NC} Restarting services..."
+    $SUDO systemctl restart ddns-backend 2>/dev/null
+    $SUDO systemctl restart nginx 2>/dev/null
+    sleep 3
+
+    if curl -s "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null | grep -q "healthy"; then
+        echo ""
+        print_ok "Update complete! All services are healthy."
+    else
+        print_warn "Backend may need attention. Check: sudo journalctl -u ddns-backend -f"
+    fi
+}
+
+menu_change_domain() {
+    echo -e "\n${CYAN}${BOLD}  Change Domain & SSL${NC}\n"
+
+    CURRENT_URL=$(get_env_val "REACT_APP_BACKEND_URL" "$FRONTEND_ENV")
+    echo -e "  ${DIM}Current URL: ${NC}${BOLD}${CURRENT_URL}${NC}"
+    echo ""
+
+    read -p "  New domain (e.g., dnslab.biz) or press Enter to cancel: " NEW_DOMAIN
+    [ -z "$NEW_DOMAIN" ] && return
+
+    read -p "  Email for SSL certificate: " SSL_EMAIL
+    [ -z "$SSL_EMAIL" ] && { print_err "Email required for SSL"; return; }
+
+    NEW_URL="https://${NEW_DOMAIN}"
+    set_env_val "REACT_APP_BACKEND_URL" "$NEW_URL" "$FRONTEND_ENV"
+    print_ok "Frontend URL updated: $NEW_URL"
+
+    # Update nginx config
+    if [ -f /etc/nginx/sites-available/dnslab-biz ]; then
+        $SUDO sed -i "s|server_name .*;|server_name ${NEW_DOMAIN};|" /etc/nginx/sites-available/dnslab-biz
+        print_ok "Nginx config updated"
+    fi
+
+    # Get SSL
+    echo ""
+    print_info "Obtaining SSL certificate..."
+    $SUDO certbot --nginx -d "${NEW_DOMAIN}" --email "${SSL_EMAIL}" --agree-tos --non-interactive --redirect 2>&1 | while IFS= read -r line; do
+        echo -e "  ${DIM}${line}${NC}"
+    done
+
+    if $SUDO certbot certificates 2>/dev/null | grep -q "${NEW_DOMAIN}"; then
+        print_ok "SSL certificate active for ${NEW_DOMAIN}"
+    else
+        print_warn "SSL may need manual setup: sudo certbot --nginx -d ${NEW_DOMAIN}"
+    fi
+
+    echo ""
+    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to rebuild frontend and restart services.${NC}"
+}
+
+menu_edit_env() {
+    echo -e "\n${CYAN}${BOLD}  Environment Variables${NC}\n"
+
+    if [ ! -f "$BACKEND_ENV" ]; then
+        print_err "backend/.env not found!"
+        return
+    fi
+
+    echo -e "  ${BOLD}Current backend/.env:${NC}\n"
+
+    local i=1
+    local keys=()
+    while IFS='=' read -r key value; do
+        [ -z "$key" ] && continue
+        [[ "$key" =~ ^# ]] && continue
+        keys+=("$key")
+
+        # Mask sensitive values
+        case "$key" in
+            *PASSWORD*|*SECRET*|*TOKEN*)
+                if [ -n "$value" ]; then
+                    masked="${value:0:4}****"
+                else
+                    masked="(empty)"
+                fi
+                echo -e "  ${BOLD}${i})${NC} ${key} = ${DIM}${masked}${NC}"
+                ;;
+            *)
+                echo -e "  ${BOLD}${i})${NC} ${key} = ${value:-${DIM}(empty)${NC}}"
+                ;;
+        esac
+        i=$((i + 1))
+    done < "$BACKEND_ENV"
+
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back to menu"
+    echo ""
+
+    read -p "  Select variable to edit (number): " CHOICE
+    [ "$CHOICE" = "0" ] || [ -z "$CHOICE" ] && return
+
+    local idx=$((CHOICE - 1))
+    if [ $idx -ge 0 ] && [ $idx -lt ${#keys[@]} ]; then
+        local sel_key="${keys[$idx]}"
+        local cur_val=$(get_env_val "$sel_key" "$BACKEND_ENV")
+        echo ""
+        echo -e "  ${BOLD}${sel_key}${NC} = ${DIM}${cur_val}${NC}"
+        read -p "  New value: " NEW_VAL
+        if [ -n "$NEW_VAL" ]; then
+            set_env_val "$sel_key" "$NEW_VAL" "$BACKEND_ENV"
+            print_ok "${sel_key} updated"
+            echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+        else
+            print_info "No change"
+        fi
+    else
+        print_err "Invalid selection"
+    fi
+}
+
+menu_cloudflare() {
+    echo -e "\n${CYAN}${BOLD}  Cloudflare Settings${NC}\n"
+
+    local cur_token=$(get_env_val "CLOUDFLARE_API_TOKEN" "$BACKEND_ENV")
+    local cur_zone=$(get_env_val "CLOUDFLARE_ZONE_ID" "$BACKEND_ENV")
+
+    echo -e "  ${BOLD}API Token:${NC}  ${DIM}${cur_token:0:8}****${NC}"
+    echo -e "  ${BOLD}Zone ID:${NC}    ${DIM}${cur_zone:0:8}****${NC}"
+    echo ""
+
+    read -p "  New API Token (Enter to skip): " NEW_TOKEN
+    [ -n "$NEW_TOKEN" ] && { set_env_val "CLOUDFLARE_API_TOKEN" "$NEW_TOKEN" "$BACKEND_ENV"; print_ok "API Token updated"; }
+
+    read -p "  New Zone ID (Enter to skip): " NEW_ZONE
+    [ -n "$NEW_ZONE" ] && { set_env_val "CLOUDFLARE_ZONE_ID" "$NEW_ZONE" "$BACKEND_ENV"; print_ok "Zone ID updated"; }
+
+    echo ""
+    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+}
+
+menu_smtp() {
+    echo -e "\n${CYAN}${BOLD}  SMTP / Email Settings${NC}\n"
+
+    local cur_email=$(get_env_val "SMTP_EMAIL" "$BACKEND_ENV")
+    local cur_pass=$(get_env_val "SMTP_PASSWORD" "$BACKEND_ENV")
+
+    echo -e "  ${BOLD}SMTP Email:${NC}     ${cur_email:-${DIM}(not set)${NC}}"
+    echo -e "  ${BOLD}App Password:${NC}   ${DIM}${cur_pass:+****set****}${cur_pass:-not set}${NC}"
+    echo ""
+
+    read -p "  New Gmail address (Enter to skip): " NEW_EMAIL
+    [ -n "$NEW_EMAIL" ] && { set_env_val "SMTP_EMAIL" "$NEW_EMAIL" "$BACKEND_ENV"; print_ok "SMTP Email updated"; }
+
+    read -p "  New App Password (Enter to skip): " NEW_PASS
+    [ -n "$NEW_PASS" ] && { set_env_val "SMTP_PASSWORD" "$NEW_PASS" "$BACKEND_ENV"; print_ok "SMTP Password updated"; }
+
+    echo ""
+    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+}
+
+menu_telegram() {
+    echo -e "\n${CYAN}${BOLD}  Telegram Settings${NC}\n"
+
+    local cur_token=$(get_env_val "TELEGRAM_BOT_TOKEN" "$BACKEND_ENV")
+    local cur_chat=$(get_env_val "TELEGRAM_CHAT_ID" "$BACKEND_ENV")
+
+    echo -e "  ${BOLD}Bot Token:${NC}  ${DIM}${cur_token:+****set****}${cur_token:-not set}${NC}"
+    echo -e "  ${BOLD}Chat ID:${NC}    ${cur_chat:-${DIM}(not set)${NC}}"
+    echo ""
+    echo -e "  ${DIM}Used for: Backup to Telegram + Admin notification on new registration${NC}"
+    echo ""
+
+    read -p "  New Bot Token (Enter to skip): " NEW_TOKEN
+    [ -n "$NEW_TOKEN" ] && { set_env_val "TELEGRAM_BOT_TOKEN" "$NEW_TOKEN" "$BACKEND_ENV"; print_ok "Bot Token updated"; }
+
+    read -p "  New Chat ID (Enter to skip): " NEW_CHAT
+    [ -n "$NEW_CHAT" ] && { set_env_val "TELEGRAM_CHAT_ID" "$NEW_CHAT" "$BACKEND_ENV"; print_ok "Chat ID updated"; }
+
+    # Test connection if both are set
+    local t_token=$(get_env_val "TELEGRAM_BOT_TOKEN" "$BACKEND_ENV")
+    local t_chat=$(get_env_val "TELEGRAM_CHAT_ID" "$BACKEND_ENV")
+    if [ -n "$t_token" ] && [ -n "$t_chat" ]; then
+        echo ""
+        read -p "  Send test message? (y/N): " TEST_TG
+        if [[ "$TEST_TG" =~ ^[Yy]$ ]]; then
+            RESULT=$(curl -s "https://api.telegram.org/bot${t_token}/sendMessage?chat_id=${t_chat}&text=DNSLAB.BIZ%20-%20Test%20message%20OK" 2>/dev/null)
+            if echo "$RESULT" | grep -q '"ok":true'; then
+                print_ok "Test message sent successfully!"
+            else
+                print_err "Failed to send. Check your token and chat ID."
+            fi
+        fi
+    fi
+
+    echo ""
+    echo -e "  ${YELLOW}Note: Run ${BOLD}Apply All Changes${NC}${YELLOW} to take effect.${NC}"
+}
+
+menu_admin() {
+    echo -e "\n${CYAN}${BOLD}  Admin Account${NC}\n"
+
+    local cur_admin=$(get_env_val "ADMIN_EMAIL" "$BACKEND_ENV")
+    echo -e "  ${BOLD}Current Admin:${NC} ${cur_admin:-${DIM}(not set)${NC}}"
+    echo ""
+
+    read -p "  New Admin Email (Enter to skip): " NEW_ADMIN
+    if [ -n "$NEW_ADMIN" ]; then
+        set_env_val "ADMIN_EMAIL" "$NEW_ADMIN" "$BACKEND_ENV"
+        print_ok "Admin email updated to: $NEW_ADMIN"
+        echo ""
+        echo -e "  ${YELLOW}Important: After Apply All Changes, run:${NC}"
+        echo -e "  ${DIM}  1. Register the new email at your website${NC}"
+        echo -e "  ${DIM}  2. curl -X POST http://127.0.0.1:${BACKEND_PORT}/api/admin/setup${NC}"
+    fi
+}
+
+menu_restart() {
+    echo -e "\n${CYAN}${BOLD}  Restarting Services...${NC}\n"
+
+    echo -e "  ${DIM}Restarting backend...${NC}"
+    $SUDO systemctl restart ddns-backend 2>/dev/null
+    sleep 2
+    if systemctl is-active --quiet ddns-backend 2>/dev/null; then
+        print_ok "Backend: running"
+    else
+        print_err "Backend: failed to start"
+        print_info "Check: sudo journalctl -u ddns-backend -n 20"
+    fi
+
+    echo -e "  ${DIM}Restarting nginx...${NC}"
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        $SUDO systemctl restart nginx
+        print_ok "Nginx: running"
+    else
+        print_info "Nginx: not installed (localhost mode)"
+    fi
+
+    echo ""
+    if curl -s "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null | grep -q "healthy"; then
+        print_ok "API health check: OK"
+    else
+        print_warn "API health check: not responding"
+    fi
+}
+
+menu_status() {
+    echo -e "\n${CYAN}${BOLD}  Service Status${NC}\n"
+
+    # Backend
+    echo -e "  ${BOLD}Backend:${NC}"
+    if systemctl is-active --quiet ddns-backend 2>/dev/null; then
+        echo -e "    Status: ${GREEN}Running${NC}"
+    else
+        echo -e "    Status: ${RED}Stopped${NC}"
+    fi
+    if curl -s "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null | grep -q "healthy"; then
+        echo -e "    Health: ${GREEN}Healthy${NC}"
+    else
+        echo -e "    Health: ${RED}Not responding${NC}"
+    fi
+
+    # Nginx
+    echo -e "\n  ${BOLD}Nginx:${NC}"
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        echo -e "    Status: ${GREEN}Running${NC}"
+    else
+        echo -e "    Status: ${DIM}Not installed / Not running${NC}"
+    fi
+
+    # MongoDB
+    echo -e "\n  ${BOLD}MongoDB:${NC}"
+    if systemctl is-active --quiet mongod 2>/dev/null || systemctl is-active --quiet mongodb 2>/dev/null; then
+        echo -e "    Status: ${GREEN}Running${NC}"
+    elif curl -s --connect-timeout 2 http://127.0.0.1:27017 > /dev/null 2>&1; then
+        echo -e "    Status: ${GREEN}Running (custom)${NC}"
+    else
+        echo -e "    Status: ${RED}Not running${NC}"
+    fi
+
+    # URLs
+    echo -e "\n  ${BOLD}URLs:${NC}"
+    local frontend_url=$(get_env_val "REACT_APP_BACKEND_URL" "$FRONTEND_ENV")
+    echo -e "    Frontend: ${frontend_url:-not configured}"
+    echo -e "    Backend:  http://127.0.0.1:${BACKEND_PORT}/api"
+
+    # Recent logs
+    echo -e "\n  ${BOLD}Recent Backend Logs (last 10):${NC}"
+    $SUDO journalctl -u ddns-backend -n 10 --no-pager 2>/dev/null | while IFS= read -r line; do
+        echo -e "    ${DIM}${line}${NC}"
+    done
+}
+
+menu_backup() {
+    echo -e "\n${CYAN}${BOLD}  Backup / Restore${NC}\n"
+
+    if [ -f "$PROJECT_DIR/backup.sh" ]; then
+        echo -e "  ${BOLD}1)${NC} Backup now (send to Telegram)"
+        echo -e "  ${BOLD}2)${NC} Restore from backup file"
+        echo -e "  ${BOLD}3)${NC} Setup daily auto-backup"
+        echo -e "  ${BOLD}0)${NC} Back"
+        echo ""
+
+        read -p "  Select: " BCHOICE
+        case "$BCHOICE" in
+            1) bash "$PROJECT_DIR/backup.sh" backup ;;
+            2) bash "$PROJECT_DIR/backup.sh" restore ;;
+            3) bash "$PROJECT_DIR/backup.sh" cron ;;
+            *) return ;;
+        esac
+    else
+        print_warn "backup.sh not found in project directory"
+    fi
+}
+
+menu_apply_all() {
+    echo -e "\n${CYAN}${BOLD}  Applying All Changes...${NC}\n"
+
+    # Rebuild frontend
+    echo -e "  ${BOLD}1/3${NC} Rebuilding frontend..."
+    cd "$PROJECT_DIR/frontend"
+    yarn build 2>&1 | tail -3
+    if [ -d "build" ] && [ -f "build/index.html" ]; then
+        print_ok "Frontend rebuilt"
+    else
+        print_warn "Frontend build may have issues"
+    fi
+
+    # Update backend deps
+    echo -e "\n  ${BOLD}2/3${NC} Updating backend..."
+    cd "$PROJECT_DIR/backend"
+    if [ -d "venv" ]; then
+        source venv/bin/activate
+        pip install -r requirements.txt -q 2>/dev/null
+        print_ok "Backend packages updated"
+    fi
+
+    # Restart services
+    echo -e "\n  ${BOLD}3/3${NC} Restarting services..."
+    $SUDO systemctl restart ddns-backend 2>/dev/null
+    sleep 2
+    $SUDO systemctl restart nginx 2>/dev/null
+    sleep 2
+
+    # Verify
+    echo ""
+    if curl -s "http://127.0.0.1:${BACKEND_PORT}/api/health" 2>/dev/null | grep -q "healthy"; then
+        print_ok "All changes applied! Services are healthy."
+    else
+        print_warn "Backend may need attention. Check: sudo journalctl -u ddns-backend -f"
+    fi
+
+    # Fix permissions
+    chmod -R 755 "$PROJECT_DIR/frontend/build" > /dev/null 2>&1 || true
+}
+
+show_menu() {
+    while true; do
+        clear
+        echo -e "${BLUE}${BOLD}"
+        echo "  ____  _   _ ____  _       _    ____      ____ ___ _____"
+        echo " |  _ \| \ | / ___|| |     / \  | __ )    | __ )_ _|__  /"
+        echo " | | | |  \| \___ \| |    / _ \ |  _ \    |  _ \| |  / / "
+        echo " | |_| | |\  |___) | |___/ ___ \| |_) |   | |_) | | / /_ "
+        echo " |____/|_| \_|____/|_____/_/   \_\____/ () |____/___/____|"
+        echo -e "${NC}"
+        echo -e "  ${DIM}Management Panel${NC}"
+        echo ""
+        echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "  ${BOLD} 1)${NC}  Update          ${DIM}(git pull + rebuild + restart)${NC}"
+        echo -e "  ${BOLD} 2)${NC}  Domain & SSL     ${DIM}(change domain, get SSL cert)${NC}"
+        echo -e "  ${BOLD} 3)${NC}  Environment      ${DIM}(edit backend/.env variables)${NC}"
+        echo -e "  ${BOLD} 4)${NC}  Cloudflare       ${DIM}(API token, zone ID)${NC}"
+        echo -e "  ${BOLD} 5)${NC}  Email / SMTP     ${DIM}(Gmail, app password)${NC}"
+        echo -e "  ${BOLD} 6)${NC}  Telegram         ${DIM}(bot token, chat ID, test)${NC}"
+        echo -e "  ${BOLD} 7)${NC}  Admin Account    ${DIM}(change admin email)${NC}"
+        echo -e "  ${BOLD} 8)${NC}  Restart Services ${DIM}(backend + nginx)${NC}"
+        echo -e "  ${BOLD} 9)${NC}  Status & Logs    ${DIM}(health check, logs)${NC}"
+        echo -e "  ${BOLD}10)${NC}  Backup / Restore ${DIM}(database backup)${NC}"
+        echo ""
+        echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "  ${GREEN}${BOLD}11)${NC}  ${GREEN}Apply All Changes & Restart${NC}"
+        echo -e "  ${RED}${BOLD} 0)${NC}  ${RED}Exit${NC}"
+        echo ""
+
+        read -p "  Select option: " OPTION
+
+        case "$OPTION" in
+            1)  menu_update ;;
+            2)  menu_change_domain ;;
+            3)  menu_edit_env ;;
+            4)  menu_cloudflare ;;
+            5)  menu_smtp ;;
+            6)  menu_telegram ;;
+            7)  menu_admin ;;
+            8)  menu_restart ;;
+            9)  menu_status ;;
+            10) menu_backup ;;
+            11) menu_apply_all ;;
+            0)  echo -e "\n  ${DIM}Bye!${NC}\n"; exit 0 ;;
+            *)  print_err "Invalid option" ;;
+        esac
+
+        echo ""
+        read -p "  Press Enter to return to menu..." _
+    done
+}
+
+# ============================================================
+#  ARGUMENT DETECTION
+# ============================================================
+
+# Check root/sudo early
+if [ "$EUID" -ne 0 ]; then
+    if command -v sudo &> /dev/null; then
+        SUDO="sudo"
+    else
+        SUDO=""
+    fi
+else
+    SUDO=""
+fi
+
+# If called as "ddns" or with "menu" argument, show management menu
+SCRIPT_NAME="$(basename "$0")"
+if [ "$1" = "menu" ] || [ "$SCRIPT_NAME" = "ddns" ]; then
+    show_menu
+    exit 0
+fi
+
+# ============================================================
+#  FRESH INSTALLATION (runs when no arguments)
+# ============================================================
+
 # Prevent interactive prompts during package installation
 export DEBIAN_FRONTEND=noninteractive
 
-# ---- Check root/sudo ----
+# Check root/sudo for installation
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
         fail_exit "This script requires root privileges. Run with: sudo bash install.sh"
     fi
-    SUDO="sudo"
-else
-    SUDO=""
 fi
 
 # ---- Detect OS ----
@@ -1036,6 +1514,7 @@ echo ""
 echo -e "  ${BOLD}Admin Email:${NC}    ${ADMIN_EMAIL}"
 echo ""
 echo -e "  ${BOLD}Useful Commands:${NC}"
+echo -e "    ${GREEN}ddns${NC}                                    ${DIM}# Management menu${NC}"
 echo -e "    sudo systemctl status ddns-backend     ${DIM}# Check status${NC}"
 echo -e "    sudo systemctl restart ddns-backend     ${DIM}# Restart backend${NC}"
 echo -e "    sudo journalctl -u ddns-backend -f      ${DIM}# View logs${NC}"
@@ -1068,4 +1547,18 @@ fi
 
 echo ""
 echo -e "  ${MAGENTA}Support: ${BOLD}https://t.me/DZ_CT${NC}"
+echo ""
+
+# ============================================================
+#  Register 'ddns' management command
+# ============================================================
+DDNS_CMD="/usr/local/bin/ddns"
+$SUDO bash -c "cat > ${DDNS_CMD}" << DDNS_EOF
+#!/bin/bash
+cd "${PROJECT_DIR}" && bash install.sh menu
+DDNS_EOF
+$SUDO chmod +x "${DDNS_CMD}"
+
+echo -e "  ${GREEN}${BOLD}Management command installed!${NC}"
+echo -e "  ${DIM}Run ${NC}${BOLD}ddns${NC}${DIM} anytime to open the management menu.${NC}"
 echo ""
